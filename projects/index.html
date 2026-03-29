@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projects — Jeff Newton</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080d17; --bg2: #0c1220; --surface: #111827;
+      --border: #1c2d47; --border2: #243a5e;
+      --cyan: #00cfc3; --cyan-dim: #007e78;
+      --amber: #f0a030; --text: #c8d6ec; --text-dim: #607898;
+      --white: #edf2fb; --green: #4ade80;
+      --grid: rgba(0,207,195,0.05);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 16px;
+      line-height: 1.7; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 52px 52px; pointer-events: none; z-index: 0;
+    }
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 52px; height: 64px;
+      background: rgba(8,13,23,0.9); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif; font-size: 20px;
+      letter-spacing: 4px; color: var(--cyan); text-decoration: none;
+    }
+    .nav-logo span { color: var(--text-dim); }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-dim); text-decoration: none; transition: color 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--cyan); }
+
+    .page-header {
+      position: relative; z-index: 1;
+      padding: 128px 52px 64px;
+      max-width: 1120px; margin: 0 auto;
+    }
+    .page-eyebrow {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--cyan); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .page-eyebrow::before { content: ''; display: block; width: 28px; height: 1px; background: var(--cyan); }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 6vw, 80px);
+      letter-spacing: 2px; color: var(--white); margin-bottom: 16px;
+    }
+    .page-sub { font-size: 16px; color: var(--text-dim); max-width: 520px; }
+
+    .filter-bar {
+      position: relative; z-index: 1;
+      padding: 0 52px 48px; max-width: 1120px; margin: 0 auto;
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .filter-btn {
+      font-family: 'Space Mono', monospace; font-size: 9px;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 7px 14px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-dim);
+      cursor: pointer; border-radius: 2px; transition: all 0.2s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      border-color: var(--cyan); color: var(--cyan);
+      background: rgba(0,207,195,0.05);
+    }
+
+    .projects-grid {
+      position: relative; z-index: 1;
+      padding: 0 52px 120px; max-width: 1120px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+    }
+
+    .project-card {
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 32px; position: relative; overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+      text-decoration: none; display: flex; flex-direction: column;
+      opacity: 0; transform: translateY(16px);
+      animation: fadeUp 0.5s forwards;
+    }
+    .project-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+    .project-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--cyan), transparent);
+      transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+    }
+    .project-card:hover::before { transform: scaleX(1); }
+    .project-card.featured { border-color: var(--border2); }
+    .project-card.featured::before { transform: scaleX(0.6); }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .card-category {
+      font-family: 'Space Mono', monospace; font-size: 9px;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim);
+    }
+    .card-status {
+      font-family: 'Space Mono', monospace; font-size: 9px;
+      padding: 3px 8px; border-radius: 2px;
+    }
+    .status-live { background: rgba(74,222,128,0.1); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+    .status-wip  { background: rgba(240,160,48,0.1); color: var(--amber); border: 1px solid rgba(240,160,48,0.2); }
+    .status-concept { background: rgba(0,207,195,0.1); color: var(--cyan); border: 1px solid rgba(0,207,195,0.2); }
+
+    .card-title {
+      font-family: 'Bebas Neue', sans-serif; font-size: 24px;
+      letter-spacing: 1px; color: var(--white); margin-bottom: 10px;
+    }
+    .card-tagline { font-size: 14px; color: var(--text-dim); line-height: 1.65; margin-bottom: 20px; flex: 1; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .card-tag {
+      font-family: 'Space Mono', monospace; font-size: 9px;
+      padding: 4px 8px; border: 1px solid var(--border);
+      color: var(--text-dim); border-radius: 2px;
+    }
+    .card-link {
+      font-family: 'Space Mono', monospace; font-size: 9px;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--cyan-dim); transition: color 0.2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .project-card:hover .card-link { color: var(--cyan); }
+
+    .empty-state {
+      position: relative; z-index: 1;
+      grid-column: 1/-1; text-align: center; padding: 80px;
+      font-family: 'Space Mono', monospace; font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    footer {
+      position: relative; z-index: 1; border-top: 1px solid var(--border);
+      padding: 28px 52px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .footer-left { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); letter-spacing: 2px; }
+    .footer-right { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-dim); }
+    .footer-right a { color: var(--cyan-dim); text-decoration: none; }
+    .footer-right a:hover { color: var(--cyan); }
+
+    @keyframes fadeUp { to { opacity: 1; transform: none; } }
+
+    @media (max-width: 960px) {
+      nav { padding: 0 24px; } .nav-links { display: none; }
+      .page-header, .filter-bar, .projects-grid { padding-left: 24px; padding-right: 24px; }
+      .projects-grid { grid-template-columns: 1fr 1fr; }
+      footer { flex-direction: column; gap: 8px; text-align: center; padding: 20px; }
+    }
+    @media (max-width: 600px) { .projects-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-logo" href="/">JNEWTON<span>.PRO</span></a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/projects/" class="active">Projects</a></li>
+      <li><a href="/#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-eyebrow">Portfolio</div>
+    <h1>Projects</h1>
+    <p class="page-sub">AI tools, automation systems, and engineering work — built and shipped.</p>
+  </div>
+
+  <div class="filter-bar" id="filter-bar">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <!-- Category filters injected by JS -->
+  </div>
+
+  <div class="projects-grid" id="projects-grid">
+    <div class="empty-state">// Loading projects...</div>
+  </div>
+
+  <footer>
+    <div class="footer-left">© 2025 JEFF NEWTON — JNEWTON.PRO</div>
+    <div class="footer-right">
+      <a href="https://github.com/JNewton86" target="_blank">GitHub</a> &nbsp;·&nbsp;
+      <a href="https://linkedin.com/in/JeffreyRNewton" target="_blank">LinkedIn</a> &nbsp;·&nbsp;
+      <a href="mailto:jeff@jnewton.pro">Email</a>
+    </div>
+  </footer>
+
+  <script>
+    let allProjects = [];
+    let activeFilter = 'all';
+
+    async function loadProjects() {
+      try {
+        const res = await fetch('/data/projects.json');
+        allProjects = await res.json();
+        buildFilters();
+        renderProjects(allProjects);
+      } catch (e) {
+        document.getElementById('projects-grid').innerHTML =
+          '<div class="empty-state">// Could not load projects.json</div>';
+      }
+    }
+
+    function buildFilters() {
+      const categories = [...new Set(allProjects.map(p => p.category))];
+      const bar = document.getElementById('filter-bar');
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.dataset.filter = cat;
+        btn.textContent = cat;
+        btn.addEventListener('click', () => setFilter(cat, btn));
+        bar.appendChild(btn);
+      });
+    }
+
+    function setFilter(filter, clickedBtn) {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      clickedBtn.classList.add('active');
+      const filtered = filter === 'all' ? allProjects : allProjects.filter(p => p.category === filter);
+      renderProjects(filtered);
+    }
+
+    document.querySelector('[data-filter="all"]').addEventListener('click', function() {
+      setFilter('all', this);
+    });
+
+    function statusLabel(s) {
+      if (s === 'live')    return '<span class="card-status status-live">Live</span>';
+      if (s === 'wip')     return '<span class="card-status status-wip">In Progress</span>';
+      return                      '<span class="card-status status-concept">Concept</span>';
+    }
+
+    function renderProjects(projects) {
+      const grid = document.getElementById('projects-grid');
+      if (!projects.length) {
+        grid.innerHTML = '<div class="empty-state">// No projects in this category yet.</div>';
+        return;
+      }
+      grid.innerHTML = projects.map((p, i) => `
+        <a class="project-card${p.featured ? ' featured' : ''}"
+           href="${p.url}"
+           style="animation-delay: ${i * 80}ms">
+          <div class="card-top">
+            <span class="card-category">${p.category}</span>
+            ${statusLabel(p.status)}
+          </div>
+          <div class="card-title">${p.title}</div>
+          <p class="card-tagline">${p.tagline}</p>
+          <div class="card-tags">
+            ${p.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}
+          </div>
+          <span class="card-link">View Project →</span>
+        </a>
+      `).join('');
+    }
+
+    loadProjects();
+  </script>
+
+</body>
+</html>

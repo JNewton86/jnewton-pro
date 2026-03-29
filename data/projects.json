@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ai-ba-toolkit",
+    "title": "AI BA Toolkit",
+    "tagline": "Three AI agents built to demonstrate business analyst capabilities in production.",
+    "tags": ["Claude API", "React", "Vite", "Vercel"],
+    "status": "live",
+    "category": "AI / Product",
+    "url": "/projects/ai-ba-toolkit.html",
+    "featured": true
+  },
+  {
+    "id": "social-media-tool",
+    "title": "Social Media Content Tool",
+    "tagline": "Production content creation tool for mortgage loan officers. Built on AWS serverless.",
+    "tags": ["OpenAI API", "AWS Lambda", "Make.com"],
+    "status": "live",
+    "category": "AI / Automation",
+    "url": "/projects/social-media-tool.html",
+    "featured": false
+  },
+  {
+    "id": "mortgage-portal-automation",
+    "title": "Mortgage Portal Automation",
+    "tagline": "Auto-generated loan status communications integrated into a customer-facing portal.",
+    "tags": ["OpenAI API", "API Integration", "Process Automation"],
+    "status": "live",
+    "category": "Process Automation",
+    "url": "/projects/mortgage-portal-automation.html",
+    "featured": false
+  }
+]
