@@ -33,14 +33,18 @@ Copy changes should be checked against both — don't make the site read as job-
 - **CSP:** Astro's `security.csp` hashes inline scripts/styles into a `<meta>`; header-only directives are in `vercel.json`. No inline `style=""`, no `define:vars`, no Shiki (Prism is configured — add a Prism theme when code blocks appear). Test CSP with `npm run build && npm run preview`, not `dev`.
 - Before finishing UI work, look at it: build, preview, and screenshot at desktop and phone widths (headless Chrome's minimum window is 500px — use an iframe page for 390/320px).
 
-## Hosting facts (as of 2026-10-16)
+## Hosting facts (as of 2026-10-17)
 
-- DNS and email are at GoDaddy (nameservers `domaincontrol.com`; MX `mx1/mx2-us1.ppe-hosted.com`; SPF includes `secureserver.net`). When pointing the site at Vercel, change only the `@` A record and `www` CNAME — never the MX/TXT records.
-- GitHub Pages is still enabled from `master` (legacy) at jnewton86.github.io/jnewton-pro/; disable it at cutover.
+- Vercel project: `jnewton86s-projects/jnewton-pro` (Jeff's personal team — never `relaunch-with-ai`). Production branch `master`; PRs get preview deployments behind Vercel Deployment Protection (use `https://jnewton-pro.vercel.app` or the live domain for unauthenticated checks).
+- Domains: `jnewton.pro` is primary; `www.jnewton.pro` 308-redirects to it. Certificates are issued and renewed by Vercel.
+- DNS is at GoDaddy (nameservers `domaincontrol.com`). Website records: apex A → `216.198.79.1` and `64.29.17.1`; `www` CNAME → `78e15f2e774d4144.vercel-dns-017.com`.
+- Email is Microsoft 365 through GoDaddy: MX `mx1/mx2-us1.ppe-hosted.com`, SPF TXT (`include:secureserver.net`), an `onmicrosoft.com` verification TXT, and `autodiscover`/`email`/`lyncdiscover` CNAMEs. **Never change these when editing DNS.**
+- GoDaddy Website Builder has lapsed and is no longer used. GitHub Pages is disabled.
+- Vercel actions (CLI or MCP) always prompt Jeff for approval, by his choice.
 
 ## Roadmap
 
-- Phase 1 (this branch): Astro foundation, accessibility fixes, CI.
+- Phase 1 (done, PR #1): Astro foundation, accessibility fixes, CI, Vercel cutover.
 - Phase 2: SEO/GEO — structured data from `site.config.ts`, OG images, Lighthouse/axe in CI.
 - Phase 3: services section and case studies (dual audience), real contact form (Vercel function + Turnstile).
 - Phase 4: AI-assisted blog (Markdown collection, RSS, draft/review skills in this repo).
