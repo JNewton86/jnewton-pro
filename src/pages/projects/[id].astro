@@ -4,6 +4,7 @@ import { getCollection, render, type CollectionEntry } from 'astro:content';
 import FeatureGrid from '../../components/FeatureGrid.astro';
 import StatusBadge from '../../components/StatusBadge.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { breadcrumbs, graph, project as projectSchema } from '../../lib/structured-data';
 
 export const getStaticPaths = (async () => {
   const projects = await getCollection('projects');
@@ -17,9 +18,25 @@ interface Props {
 const { project } = Astro.props;
 const { title, summary, category, status, stack, features, outcome, demo, repo } = project.data;
 const { Content } = await render(project);
+
+const structuredData = graph([
+  projectSchema(project),
+  breadcrumbs([
+    { name: 'Home', path: '/' },
+    { name: 'Projects', path: '/projects/' },
+    { name: title, path: `/projects/${project.id}/` },
+  ]),
+]);
 ---
 
-<BaseLayout title={title} description={summary} type="article">
+<BaseLayout
+  title={title}
+  description={summary}
+  type="article"
+  ogImage={`/og/projects/${project.id}.png`}
+  ogImageAlt={`${title}: ${project.data.tagline}`}
+  structuredData={structuredData}
+>
   <article class="section">
     <div class="container narrow">
       <nav aria-label="Breadcrumb" class="breadcrumb">

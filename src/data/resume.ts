@@ -79,6 +79,10 @@ export const skillGroups = [
 export interface Role {
   title: string;
   org: string;
+  /** Extra context shown after the organization, e.g. a program focus. */
+  detail?: string;
+  /** Education only: whether the program was finished (drives schema.org alumniOf). */
+  completed?: boolean;
   start: string;
   end: string;
   highlights: readonly string[];
@@ -151,7 +155,9 @@ export const experience: readonly Role[] = [
 export const education: readonly Role[] = [
   {
     title: 'MS Information Technology',
-    org: 'University of the People — focus: AI and machine learning',
+    org: 'University of the People',
+    detail: 'Focus: AI and machine learning',
+    completed: false,
     start: 'Jan 2023',
     end: 'Dec 2026 (expected)',
     highlights: ['Coursework focused on machine learning, AI systems, and applied data science'],
@@ -159,6 +165,7 @@ export const education: readonly Role[] = [
   {
     title: 'BA Economics, minor in Finance',
     org: 'Florida International University',
+    completed: true,
     start: 'Aug 2004',
     end: 'May 2009',
     highlights: [

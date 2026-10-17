@@ -2,13 +2,34 @@
 import { getCollection } from 'astro:content';
 import ProjectCard from '../../components/ProjectCard.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { breadcrumbs, graph, ids } from '../../lib/structured-data';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+
+const structuredData = graph([
+  {
+    '@type': 'CollectionPage',
+    url: new URL('/projects/', Astro.site).href,
+    name: 'Projects',
+    isPartOf: { '@id': ids.website },
+    about: { '@id': ids.person },
+    hasPart: projects.map((p) => ({
+      '@id': new URL(`/projects/${p.id}/#project`, Astro.site).href,
+    })),
+  },
+  breadcrumbs([
+    { name: 'Home', path: '/' },
+    { name: 'Projects', path: '/projects/' },
+  ]),
+]);
 ---
 
 <BaseLayout
   title="Projects"
   description="AI tools, automation systems, and engineering work built and shipped by Jeff Newton."
+  ogImage="/og/projects.png"
+  ogImageAlt="Projects by Jeff Newton"
+  structuredData={structuredData}
 >
   <section class="section" aria-labelledby="projects-title">
     <div class="container">

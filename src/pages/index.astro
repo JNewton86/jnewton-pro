@@ -7,7 +7,10 @@ import StatusBadge from '../components/StatusBadge.astro';
 import Timeline from '../components/Timeline.astro';
 import { certifications, education, experience, skillGroups, stats } from '../data/resume';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { graph, person, profilePage, website } from '../lib/structured-data';
 import { site } from '../site.config';
+
+const structuredData = graph([person(), website(), profilePage()]);
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.find((p) => p.data.featured);
@@ -26,7 +29,7 @@ const contactLinks = [
 ];
 ---
 
-<BaseLayout>
+<BaseLayout structuredData={structuredData}>
   <Hero />
 
   <section id="about" class="section" aria-labelledby="about-title">
