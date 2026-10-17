@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output and Astro's generated types
+dist/
+.astro/
+
+# Environment files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# Vercel CLI link data
+.vercel/
+
+# Logs and OS/editor clutter
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

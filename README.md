@@ -1,161 +1,66 @@
 # jnewton.pro
 
-Personal portfolio and project showcase for Jeff Newton — AI Business Analyst, Product Owner, Cloud Engineer.
+Portfolio and AI-consulting site for Jeff Newton — technical product manager and applied AI developer.
 
-**Live site:** [jnewton.pro](https://jnewton.pro)
+Built with [Astro](https://astro.build) as a static site (no client-side framework; the only JavaScript is a few lines that close the mobile menu). Hosted on Vercel.
 
----
+## Local development
 
-## Stack
+Requires Node 22.12 or later (see `.nvmrc`).
 
-Plain HTML/CSS/JS. No build step. No framework. Hosted on GitHub Pages with a custom domain.
-
----
-
-## Folder Structure
-
-```
-jnewton-pro/
-├── index.html                        # Main portfolio page
-├── projects/
-│   ├── index.html                    # Auto-lists all projects from data/projects.json
-│   ├── _template.html                # Copy this to add a new project page
-│   ├── ai-ba-toolkit.html            # AI BA Toolkit project page
-│   ├── social-media-tool.html        # Social Media Content Tool page (add when ready)
-│   └── mortgage-portal-automation.html  # Mortgage Portal page (add when ready)
-├── data/
-│   └── projects.json                 # Project list — edit this to add/remove projects
-└── README.md
+```sh
+npm install
+npm run dev       # http://localhost:4321
 ```
 
----
+Before opening a pull request, run everything CI runs:
 
-## Setup: GitHub Pages with Custom Domain
-
-### 1. Create the repo
-
-1. Go to [github.com/new](https://github.com/new)
-2. Name it `jnewton-pro` (or anything you like)
-3. Set it to **Public**
-4. Do NOT initialize with a README (you already have files)
-
-### 2. Push your files
-
-```bash
-cd jnewton-pro
-git init
-git add .
-git commit -m "Initial site"
-git branch -M main
-git remote add origin https://github.com/JNewton86/jnewton-pro.git
-git push -u origin main
+```sh
+npm run verify    # formatting, lint (incl. accessibility rules), type-check, build, built-site checks
 ```
 
-### 3. Enable GitHub Pages
+The Content Security Policy only applies to production builds, so check CSP-sensitive changes with `npm run build && npm run preview`.
 
-1. Go to your repo on GitHub
-2. Click **Settings** → **Pages**
-3. Under "Source", select **Deploy from a branch**
-4. Branch: `main`, folder: `/ (root)`
-5. Click **Save**
+## Where things live
 
-GitHub will give you a URL like `https://jnewton86.github.io/jnewton-pro`
+| Path                        | What it is                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| `src/site.config.ts`        | Identity (name, contact, social links) and the main navigation — edit details here |
+| `src/data/resume.ts`        | Experience, education, certifications, skills, and stats shown on the home page    |
+| `src/content/projects/*.md` | One file per project; the file name is the URL slug                                |
+| `src/content.config.ts`     | The schema every project file must match (the build fails if one doesn't)          |
+| `src/styles/global.css`     | Design tokens (colors, type scale, spacing) and shared styles                      |
+| `src/components/`           | Page sections and reusable pieces                                                  |
+| `src/pages/`                | Routes: home, projects list, project pages, 404, robots.txt                        |
+| `public/assets/`            | Files served as-is, e.g. the résumé PDF                                            |
+| `scripts/check-dist.mjs`    | Post-build checks: internal links and anchors, CSP coverage, no inline styles      |
+| `vercel.json`               | Security headers, redirects from the old `.html` URLs, caching                     |
 
-### 4. Connect your custom domain (jnewton.pro)
+## Adding a project
 
-**In GitHub:**
-1. Settings → Pages → Custom domain
-2. Type `jnewton.pro` and click Save
-3. Check "Enforce HTTPS" once DNS is confirmed
+1. Create `src/content/projects/<slug>.md`. Copy an existing project for the frontmatter fields.
+2. Write the overview as the Markdown body.
+3. Run `npm run dev` and check `/projects/<slug>/`.
 
-**In GoDaddy (or wherever your domain lives):**
+The home page and projects list pick it up automatically. Set `featured: true` on at most one project to show it as the large card on the home page; `order` controls the sequence.
 
-Add these DNS records:
+## Design and accessibility rules
 
-| Type  | Name | Value                  |
-|-------|------|------------------------|
-| A     | @    | 185.199.108.153        |
-| A     | @    | 185.199.109.153        |
-| A     | @    | 185.199.110.153        |
-| A     | @    | 185.199.111.153        |
-| CNAME | www  | jnewton86.github.io    |
+- Colors come from the tokens in `global.css`. Text colors are checked against WCAG AA on every background — re-check contrast when changing one.
+- Font sizes use `rem` (never `px`, and never set a font size on `html`), so text follows the reader's browser and OS text size.
+- No inline `style` attributes or `define:vars` — the CSP blocks them. `npm run check:dist` catches this.
+- Motion: the hero load sequence is the only animation, and it's off for anyone with reduced motion turned on.
+- Monospace is reserved for things that are literally code: the terminal card and tech tags.
 
-DNS changes can take up to 24 hours to propagate. Once done, jnewton.pro will load your GitHub Pages site.
+## Deployment
 
-**Important:** You can keep your domain at GoDaddy and just stop paying for the Website Builder. The domain registration is a separate charge from the website builder subscription.
+Vercel builds every pull request as a preview and deploys `master` to production. No environment variables are needed.
 
----
+## Domain and email notes
 
-## Adding a New Project
+The domain is registered at GoDaddy. The registration is separate from the Website Builder subscription, so the builder can be cancelled once DNS points at Vercel. To keep `jeff@jnewton.pro` working without GoDaddy:
 
-### Step 1: Add an entry to `data/projects.json`
+- **Cloudflare Email Routing** (free, receive only): forwards mail to another inbox. Requires moving DNS to Cloudflare.
+- **Zoho Mail** (free for one user, send and receive): adds MX records to the domain's DNS. Better if the address is used for professional correspondence.
 
-```json
-{
-  "id": "my-new-project",
-  "title": "My New Project",
-  "tagline": "One sentence describing what it does.",
-  "tags": ["React", "AWS", "Claude API"],
-  "status": "live",
-  "category": "AI / Product",
-  "url": "/projects/my-new-project.html",
-  "featured": false
-}
-```
-
-Status options: `"live"`, `"wip"`, `"concept"`
-
-### Step 2: Copy the template
-
-```bash
-cp projects/_template.html projects/my-new-project.html
-```
-
-Then open the file and fill in every section marked `TODO`.
-
-### Step 3: Push
-
-```bash
-git add .
-git commit -m "Add my-new-project"
-git push
-```
-
-That's it. It's live at `jnewton.pro/projects/my-new-project` within about 60 seconds.
-
----
-
-## Updating Content on the Main Page
-
-All content is in `index.html`. Open it in any text editor, make your changes, and push.
-
-The sections are clearly commented. Search for the text you want to change — it's plain HTML.
-
----
-
-## Contact Form
-
-The contact form in `index.html` doesn't actually send emails yet. To wire it up:
-
-1. Go to [formspree.io](https://formspree.io) and create a free account
-2. Create a new form — it gives you an endpoint like `https://formspree.io/f/xyzabcde`
-3. In `index.html`, find the `handleSend()` function and replace it with a fetch POST to that URL
-
-Free tier: 50 submissions/month. More than enough for a portfolio.
-
----
-
-## Email (keeping jeff@jnewton.pro without GoDaddy)
-
-Once you cancel the GoDaddy website builder, keep the domain but set up free email forwarding:
-
-**Option A: Cloudflare Email Routing (free, receive only)**
-- Move DNS to Cloudflare (free)
-- Enable Email Routing → forwards jeff@jnewton.pro to your Gmail
-
-**Option B: Zoho Mail (free, send and receive as jeff@jnewton.pro)**
-- Sign up at [zoho.com/mail](https://zoho.com/mail) — free for 1 user
-- Follow their DNS setup (adds MX records to your domain)
-- You'll be able to send AND receive as jeff@jnewton.pro
-
-Zoho is the better option if you're using this email professionally in job applications.
+Whichever is used, keep the MX and SPF/DKIM records intact when changing DNS for Vercel.

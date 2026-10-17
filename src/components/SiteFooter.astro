@@ -1,0 +1,56 @@
+---
+import { site } from '../site.config';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="meta">
+      &copy; {year} {site.name}
+    </p>
+    <nav aria-label="Footer">
+      <ul>
+        <li>
+          <a href={site.social.github.url} rel="me">
+            GitHub
+          </a>
+        </li>
+        <li>
+          <a href={site.social.linkedin.url} rel="me">
+            LinkedIn
+          </a>
+        </li>
+        <li>
+          <a href={`mailto:${site.email}`}>Email</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-block-start: 1px solid var(--border);
+    padding-block: 1.75rem;
+  }
+
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  ul {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    font-size: var(--text-sm);
+  }
+</style>

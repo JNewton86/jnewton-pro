@@ -1,0 +1,300 @@
+/*
+ * jnewton.pro design tokens and base styles.
+ * Text colors are checked against WCAG AA on every background below
+ * (muted text >= 5.9:1, cyan-dim >= 5.6:1). Re-check if a color changes.
+ * Font sizes use rem so they follow the reader's browser and OS text size;
+ * never set a font-size on :root/html.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Palette */
+  --bg: #080d17;
+  --bg-raised: #0c1220;
+  --surface: #111827;
+  --surface-2: #162033;
+  --border: #1c2d47;
+  --border-strong: #243a5e;
+  --cyan: #00cfc3;
+  --cyan-bright: #5ee8de;
+  --cyan-dim: #2fa89f;
+  --amber: #f0a030;
+  --green: #4ade80;
+  --heading: #edf2fb;
+  --text: #c8d6ec;
+  --text-muted: #8a9dba;
+  --grid-line: rgb(0 207 195 / 0.045);
+
+  /* Type families come from Astro's font config (self-hosted, with metric-matched fallbacks) */
+  --font-body: var(--font-dm-sans);
+  --font-display: var(--font-bebas-neue);
+  --font-mono: var(--font-space-mono);
+
+  /* Type scale (rem; fluid steps mix rem with vw so they still respond to text zoom) */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-h3: 1.75rem;
+  --text-h2: clamp(2.5rem, 1.75rem + 2.5vw, 3.75rem);
+  --text-h1: clamp(3.75rem, 2rem + 6vw, 6.5rem);
+
+  /* Layout */
+  --content-max: 72rem;
+  --prose-max: 65ch;
+  --gutter: clamp(1.25rem, 0.5rem + 3vw, 3.25rem);
+  --section-space: clamp(4.5rem, 3rem + 5vw, 8rem);
+  --header-height: 4rem;
+  --radius: 0.125rem;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  scroll-padding-top: calc(var(--header-height) + 1rem);
+  text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  min-block-size: 100dvh;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 3.25rem 3.25rem;
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+  display: block;
+  max-inline-size: 100%;
+}
+
+/* Typography */
+h1,
+h2,
+h3 {
+  color: var(--heading);
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-h1);
+}
+
+h2 {
+  font-size: var(--text-h2);
+  margin-block-end: 2.5rem;
+}
+
+h3 {
+  font-size: var(--text-h3);
+}
+
+p,
+li {
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--cyan-bright);
+}
+
+:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+/* Main is the skip-link target; it takes focus programmatically only */
+main:focus {
+  outline: none;
+}
+
+.prose {
+  max-inline-size: var(--prose-max);
+}
+
+.prose p + p {
+  margin-block-start: 1.1em;
+}
+
+.lede {
+  color: var(--text-muted);
+  font-size: var(--text-lg);
+  line-height: 1.75;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/* Layout utilities */
+.container {
+  inline-size: min(100% - 2 * var(--gutter), var(--content-max));
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: var(--section-space);
+}
+
+.band {
+  background-color: var(--bg-raised);
+}
+
+/* Reflowing card grid: columns appear as space allows, never narrower than --min */
+.card-grid {
+  --min: 16rem;
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min)), 1fr));
+}
+
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  padding: clamp(1.25rem, 1rem + 1vw, 2rem);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-block-size: 2.75rem;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.btn-primary {
+  background-color: var(--cyan);
+  color: var(--bg);
+}
+
+.btn-primary:hover {
+  background-color: var(--cyan-bright);
+  color: var(--bg);
+}
+
+.btn-secondary {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.btn-secondary:hover {
+  background-color: rgb(240 160 48 / 0.1);
+  color: var(--amber);
+}
+
+.btn-ghost {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.btn-ghost:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Tech tags: monospace because they name real tools and APIs */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+/* Accessibility helpers */
+.visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  padding: 0.625rem 1rem;
+  background-color: var(--cyan);
+  color: var(--bg);
+  font-weight: 600;
+  text-decoration: none;
+  translate: 0 -200%;
+}
+
+.skip-link:focus-visible {
+  translate: 0 0;
+}
+
+@media (forced-colors: active) {
+  .btn,
+  .tag,
+  .card {
+    border-color: CanvasText;
+  }
+}
