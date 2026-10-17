@@ -78,6 +78,8 @@ for (const [file, html] of pages) {
         new RegExp(`<${kind}(\\s[^>]*)?>([\\s\\S]*?)</${kind}>`, 'g'),
       )) {
         if (/\ssrc=/.test(attrs ?? '') || body.trim() === '') continue;
+        // JSON-LD is a data block, never executed, so CSP doesn't apply (checked in 4. instead).
+        if (/type="application\/ld\+json"/.test(attrs ?? '')) continue;
         if (!allowed[kind].has(sha256(body)))
           problems.push(`${where}: inline <${kind}> not covered by CSP hash`);
       }
@@ -86,10 +88,33 @@ for (const [file, html] of pages) {
 
   // 3. Inline style attributes
   if (/\sstyle="/.test(html)) problems.push(`${where}: inline style="" attribute (blocked by CSP)`);
+
+  // 4. Structured data parses and declares a schema.org context
+  for (const [, body] of html.matchAll(
+    /<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g,
+  )) {
+    try {
+      const data = JSON.parse(body);
+      if (data['@context'] !== 'https://schema.org')
+        problems.push(`${where}: JSON-LD missing schema.org @context`);
+    } catch {
+      problems.push(`${where}: JSON-LD is not valid JSON`);
+    }
+  }
+
+  // 5. The link-preview image exists in the build
+  const ogImage = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+  if (!ogImage) {
+    problems.push(`${where}: no og:image`);
+  } else if (!existsSync(join(DIST, new URL(ogImage).pathname))) {
+    problems.push(`${where}: og:image ${ogImage} not found in dist/`);
+  }
 }
 
 if (problems.length) {
   console.error(`check-dist found ${problems.length} problem(s):\n- ${problems.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`check-dist: ${pages.size} pages OK (links, anchors, CSP coverage, no inline styles).`);
+console.log(
+  `check-dist: ${pages.size} pages OK (links, anchors, CSP coverage, no inline styles, JSON-LD, og:image).`,
+);

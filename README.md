@@ -6,7 +6,7 @@ Built with [Astro](https://astro.build) as a static site (no client-side framewo
 
 ## Local development
 
-Requires Node 22.12 or later (see `.nvmrc`).
+Requires Node 22.19 or later (see `.nvmrc`).
 
 ```sh
 npm install
@@ -16,10 +16,22 @@ npm run dev       # http://localhost:4321
 Before opening a pull request, run everything CI runs:
 
 ```sh
-npm run verify    # formatting, lint (incl. accessibility rules), type-check, build, built-site checks
+npm run verify       # formatting, lint (incl. accessibility rules), type-check, build, built-site checks
+npm run lighthouse   # after a build: Lighthouse budgets on key pages (needs Chrome installed)
 ```
 
+`npm run lighthouse -- --url https://jnewton.pro` runs the same budgets against the live site.
+
 The Content Security Policy only applies to production builds, so check CSP-sensitive changes with `npm run build && npm run preview`.
+
+## Search and AI visibility
+
+Generated at build time from `src/site.config.ts`, `src/data/resume.ts`, and the projects collection, so they never drift from what the pages say:
+
+- **Structured data** (schema.org JSON-LD, `src/lib/structured-data.ts`): `Person`, `WebSite`, and `ProfilePage` on the home page; `CreativeWork` and `BreadcrumbList` on project pages. Validate changes with Google's Rich Results Test or validator.schema.org.
+- **Link-preview images** (`src/lib/og-image.ts` → `/og/*.png`): one 1200×630 card per page, rendered with Satori and resvg using the site's fonts.
+- **`/llms.txt`**: a plain-text summary for AI assistants.
+- **`/sitemap-index.xml`** and **`/robots.txt`** (all crawlers allowed, including AI search crawlers).
 
 ## Where things live
 
@@ -31,9 +43,11 @@ The Content Security Policy only applies to production builds, so check CSP-sens
 | `src/content.config.ts`     | The schema every project file must match (the build fails if one doesn't)          |
 | `src/styles/global.css`     | Design tokens (colors, type scale, spacing) and shared styles                      |
 | `src/components/`           | Page sections and reusable pieces                                                  |
-| `src/pages/`                | Routes: home, projects list, project pages, 404, robots.txt                        |
+| `src/pages/`                | Routes: home, projects, project pages, 404, robots.txt, llms.txt, preview images   |
+| `src/lib/`                  | Structured data and link-preview image builders                                    |
 | `public/assets/`            | Files served as-is, e.g. the résumé PDF                                            |
-| `scripts/check-dist.mjs`    | Post-build checks: internal links and anchors, CSP coverage, no inline styles      |
+| `scripts/check-dist.mjs`    | Post-build checks: links, anchors, CSP coverage, inline styles, JSON-LD, og:image  |
+| `scripts/lighthouse.mjs`    | Lighthouse budgets (accessibility/SEO/best practices 100, performance ≥ 95)        |
 | `vercel.json`               | Security headers, redirects from the old `.html` URLs, caching                     |
 
 ## Adding a project

@@ -10,13 +10,16 @@ const { items } = Astro.props;
 
 <!-- A real chronological sequence, so the connecting line and markers carry meaning -->
 <ol class="timeline">
-  {items.map(({ title, org, start, end, highlights }) => (
+  {items.map(({ title, org, detail, start, end, highlights }) => (
     <li class="timeline-item">
       <p class="dates">
         {start} – {end}
       </p>
       <h3 class="role">{title}</h3>
-      <p class="org">{org}</p>
+      <p class="org">
+        {org}
+        {detail && <span class="detail">{detail}</span>}
+      </p>
       <ul class="highlights">
         {highlights.map((item) => (
           <li>{item}</li>
@@ -78,6 +81,10 @@ const { items } = Astro.props;
     margin-block-end: 1rem;
     color: var(--text-muted);
     font-size: var(--text-sm);
+  }
+
+  .detail {
+    display: block;
   }
 
   .highlights {
