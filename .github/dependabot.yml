@@ -12,6 +12,12 @@ updates:
           ['eslint*', '@eslint/*', 'typescript-eslint', 'prettier*', 'globals', 'typescript']
       fonts:
         patterns: ['@fontsource/*', '@fontsource-variable/*']
+    ignore:
+      # TypeScript 7 isn't supported yet by @astrojs/check (peer: ^5 || ^6) or
+      # typescript-eslint (peer: <6.1) as of 2026-10-17, so `npm ci` fails on it.
+      # Remove this once both accept TypeScript 7 (check their peerDependencies).
+      - dependency-name: 'typescript'
+        versions: ['>=7']
 
   - package-ecosystem: github-actions
     directory: /
