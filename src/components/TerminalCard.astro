@@ -1,0 +1,136 @@
+---
+import { site } from '../site.config';
+
+// Rendered as real JSON inside <pre>, with spans only for syntax color.
+const profile: [string, string | boolean | number | string[]][] = [
+  ['name', site.name],
+  ['role', 'Technical Product Manager'],
+  ['location', site.location],
+  ['available', true],
+  [
+    'strengths',
+    [
+      'AI tool deployment',
+      'Requirements & user stories',
+      'Stakeholder alignment',
+      'Backend + cloud engineering',
+    ],
+  ],
+  ['agents_shipped', 3],
+  ['contact', site.email],
+];
+const lastIndex = profile.length - 1;
+---
+
+<figure class="terminal">
+  <div class="terminal-bar" aria-hidden="true">
+    <span class="dot dot-red"></span>
+    <span class="dot dot-amber"></span>
+    <span class="dot dot-green"></span>
+    <span class="terminal-title">profile.json</span>
+  </div>
+  <figcaption class="visually-hidden">Profile summary, formatted as JSON</figcaption>
+  <pre class="terminal-body"><code>{'{\n'}{profile.map(([key, value], i) => (
+  <Fragment>{'  '}<span class="t-key">"{key}"</span>: {Array.isArray(value) ? (
+    <Fragment>[{'\n'}{value.map((item, j) => (
+      <Fragment>{'    '}<span class="t-str">"{item}"</span>{j < value.length - 1 ? ',' : ''}{'\n'}</Fragment>
+    ))}{'  ]'}</Fragment>
+  ) : typeof value === 'string' ? (
+    <span class="t-str">"{value}"</span>
+  ) : (
+    <span class="t-lit">{String(value)}</span>
+  )}{i < lastIndex ? ',' : ''}{'\n'}</Fragment>
+))}{'}\n'}<span class="t-comment">// </span><span class="cursor" aria-hidden="true"></span></code></pre>
+</figure>
+
+<style>
+  .terminal {
+    min-inline-size: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background-color: var(--surface);
+    box-shadow: 0 2.5rem 5rem rgb(0 0 0 / 0.55);
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.7rem 1rem;
+    border-block-end: 1px solid var(--border);
+    background-color: var(--bg-raised);
+  }
+
+  .dot {
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: 50%;
+  }
+
+  .dot-red {
+    background-color: #e05c5c;
+  }
+
+  .dot-amber {
+    background-color: var(--amber);
+  }
+
+  .dot-green {
+    background-color: #5cc96e;
+  }
+
+  .terminal-title {
+    margin-inline-start: 0.4rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  /* Wraps instead of scrolling sideways on narrow screens, so no keyboard stop is needed */
+  .terminal-body {
+    padding: 1.4rem 1.5rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.9;
+  }
+
+  .t-key {
+    color: var(--amber);
+  }
+
+  .t-str {
+    color: #8ec98e;
+  }
+
+  .t-lit {
+    color: var(--cyan);
+  }
+
+  .t-comment {
+    color: var(--text-muted);
+  }
+
+  .cursor {
+    display: inline-block;
+    inline-size: 0.45rem;
+    block-size: 0.85rem;
+    vertical-align: middle;
+    background-color: var(--cyan);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .cursor {
+      animation: blink 1s step-end infinite;
+    }
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+</style>

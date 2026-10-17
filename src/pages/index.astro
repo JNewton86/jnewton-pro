@@ -1,0 +1,280 @@
+---
+import { getCollection } from 'astro:content';
+import FeaturedProject from '../components/FeaturedProject.astro';
+import Hero from '../components/Hero.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import StatusBadge from '../components/StatusBadge.astro';
+import Timeline from '../components/Timeline.astro';
+import { certifications, education, experience, skillGroups, stats } from '../data/resume';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../site.config';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const featured = projects.find((p) => p.data.featured);
+const others = projects.filter((p) => p !== featured);
+
+const contactLinks = [
+  { label: 'Email', value: site.email, href: `mailto:${site.email}` },
+  {
+    label: 'LinkedIn',
+    value: site.social.linkedin.handle,
+    href: site.social.linkedin.url,
+    rel: 'me',
+  },
+  { label: 'GitHub', value: site.social.github.handle, href: site.social.github.url, rel: 'me' },
+  { label: 'Phone', value: site.phone.display, href: site.phone.href },
+];
+---
+
+<BaseLayout>
+  <Hero />
+
+  <section id="about" class="section" aria-labelledby="about-title">
+    <div class="container about-grid">
+      <div class="prose">
+        <h2 id="about-title">About</h2>
+        <p>
+          I've spent 15+ years in mortgage lending, fintech, and cloud-native software delivery,
+          with a track record of leading customer-facing financial products from concept through
+          launch.
+        </p>
+        <p>
+          Deep domain expertise in residential lending (FHA, VA, USDA, GSE, portfolio, non-QM)
+          combined with hands-on experience across APIs, cloud infrastructure (AWS/GCP), AI
+          integrations, and legacy-to-modern platform modernization. I'm recognized for bridging
+          engineering, compliance, operations, and executive stakeholders to deliver secure,
+          high-performing solutions in regulated environments.
+        </p>
+        <p>
+          I'm targeting Technical Product Manager, Applied AI Developer, and AI Program Manager
+          roles at organizations that are serious about AI adoption — not just evaluating it. The
+          combination of deep domain expertise, hands-on engineering ability, and production AI
+          development work is uncommon. That's the value I bring.
+        </p>
+      </div>
+      <dl class="stats">
+        {stats.map(({ value, label }) => (
+          <div class="stat">
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section id="work" class="section band" aria-labelledby="work-title">
+    <div class="container">
+      <h2 id="work-title">Work</h2>
+      {featured && <FeaturedProject project={featured} />}
+      <div class="card-grid">
+        {others.map((project) => (
+          <ProjectCard project={project} />
+        ))}
+      </div>
+      <p class="more-link">
+        <a href="/projects/">See all projects</a>
+      </p>
+    </div>
+  </section>
+
+  <section id="skills" class="section" aria-labelledby="skills-title">
+    <div class="container">
+      <h2 id="skills-title">Skills and tools</h2>
+      <div class="card-grid skills-grid">
+        {skillGroups.map(({ title, items }) => (
+          <section class="card skill-group" aria-label={title}>
+            <h3 class="group-title">{title}</h3>
+            <ul class="tags">
+              {items.map((item) => (
+                <li class="tag">{item}</li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="experience" class="section band" aria-labelledby="experience-title">
+    <div class="container">
+      <h2 id="experience-title">Experience</h2>
+      <Timeline items={experience} />
+    </div>
+  </section>
+
+  <section id="education" class="section" aria-labelledby="education-title">
+    <div class="container">
+      <h2 id="education-title">Education</h2>
+      <Timeline items={education} />
+    </div>
+  </section>
+
+  <section id="certifications" class="section" aria-labelledby="certifications-title">
+    <div class="container">
+      <h2 id="certifications-title">Certifications</h2>
+      <ul class="card-grid certs">
+        {certifications.map(({ name, issuer, status }) => (
+          <li class="card cert">
+            <h3 class="cert-name">{name}</h3>
+            <p class="meta">{issuer}</p>
+            <StatusBadge status={status} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section id="contact" class="section band" aria-labelledby="contact-title">
+    <div class="container contact-grid">
+      <div class="prose">
+        <h2 id="contact-title">Contact</h2>
+        <p class="lede">
+          Open to Technical Product Manager, Applied AI Developer, and AI Program Manager roles in
+          the Nashville metro area or remote. If you need someone who can identify the business
+          problem, design the AI solution, and ship it — reach out.
+        </p>
+        <div class="actions contact-actions">
+          <a class="btn btn-primary" href={`mailto:${site.email}`}>
+            Email me
+          </a>
+          <a class="btn btn-secondary" href={site.resume} download>
+            Download résumé (PDF)
+          </a>
+        </div>
+      </div>
+      <ul class="contact-list">
+        {contactLinks.map(({ label, value, href, rel }) => (
+          <li>
+            <a href={href} rel={rel}>
+              <span class="contact-label">{label}</span>
+              <span class="contact-value">{value}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about-grid,
+  .contact-grid {
+    display: grid;
+    gap: clamp(2.5rem, 1rem + 4vw, 5rem);
+    align-items: start;
+  }
+
+  @media (width >= 60rem) {
+    .about-grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    }
+
+    .contact-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    padding: 1.5rem 1.25rem;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+  }
+
+  .stat dd {
+    color: var(--cyan);
+    font-family: var(--font-display);
+    font-size: 2.75rem;
+    line-height: 1;
+  }
+
+  .stat dt {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .more-link {
+    margin-block-start: 2rem;
+  }
+
+  .skills-grid {
+    --min: 14rem;
+  }
+
+  .group-title,
+  .cert-name {
+    margin-block-end: 1rem;
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+
+  .group-title {
+    color: var(--amber);
+  }
+
+  .certs {
+    --min: 17rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cert {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .cert-name {
+    margin-block-end: 0;
+  }
+
+  .contact-actions {
+    margin-block-start: 2rem;
+  }
+
+  .contact-list {
+    display: grid;
+    gap: 0.625rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .contact-list a {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 1.25rem;
+    padding: 0.875rem 1.125rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .contact-list a:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .contact-label {
+    min-inline-size: 5rem;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+</style>

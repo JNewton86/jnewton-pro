@@ -1,0 +1,74 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  /** Heading level, so cards nest correctly under the page outline. */
+  level?: 'h2' | 'h3';
+}
+
+const { project, level: Heading = 'h3' } = Astro.props;
+const { title, tagline, category, status, stack } = project.data;
+---
+
+<article class="card project-card">
+  <div class="card-meta">
+    <span class="meta">{category}</span>
+    <StatusBadge status={status} />
+  </div>
+  <Heading class="card-title">
+    <a href={`/projects/${project.id}/`}>{title}</a>
+  </Heading>
+  <p class="tagline">{tagline}</p>
+  <ul class="tags" aria-label="Built with">
+    {stack.slice(0, 4).map((item) => (
+      <li class="tag">{item}</li>
+    ))}
+  </ul>
+</article>
+
+<style>
+  .project-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    transition: border-color 0.15s ease;
+  }
+
+  /* The whole card is clickable through the title link's stretched hit area,
+     so there is one link per card for keyboard and screen reader users. */
+  .project-card:hover,
+  .project-card:has(a:focus-visible) {
+    border-color: var(--cyan-dim);
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.625rem;
+  }
+
+  .card-title a {
+    color: var(--heading);
+    text-decoration: none;
+  }
+
+  .card-title a::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+  }
+
+  .tagline {
+    flex: 1;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+</style>

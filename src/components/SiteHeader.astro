@@ -1,0 +1,154 @@
+---
+import { nav } from '../site.config';
+
+const path = Astro.url.pathname;
+const isCurrent = (href: string) => !href.includes('#') && path.startsWith(href);
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="wordmark" href="/">
+      jnewton<span>.pro</span>
+    </a>
+
+    <nav aria-label="Main">
+      <!-- On narrow screens the list is a native popover: no JS needed to open it,
+           and Esc or clicking outside closes it. On wide screens it's a plain list. -->
+      <button class="nav-toggle" type="button" popovertarget="site-nav">
+        <svg aria-hidden="true" viewBox="0 0 20 14" width="20" height="14">
+          <path d="M0 1h20M0 7h20M0 13h20" stroke="currentColor" stroke-width="2"></path>
+        </svg>
+        Menu
+      </button>
+      <ul id="site-nav" class="nav-list" popover>
+        {nav.map(({ label, href }) => (
+          <li>
+            <a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<script>
+  // Same-page anchor links don't navigate away, so close the open menu ourselves.
+  const menu = document.getElementById('site-nav');
+  menu?.addEventListener('click', (event) => {
+    if (
+      event.target instanceof Element &&
+      event.target.closest('a') &&
+      menu.matches(':popover-open')
+    ) {
+      menu.hidePopover();
+    }
+  });
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 50;
+    border-block-end: 1px solid var(--border);
+    background-color: rgb(8 13 23 / 0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-block-size: var(--header-height);
+  }
+
+  .wordmark {
+    color: var(--cyan);
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    letter-spacing: 0.15em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .wordmark span {
+    color: var(--text-muted);
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-block-size: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .nav-list {
+    list-style: none;
+  }
+
+  .nav-list a {
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .nav-list a:hover,
+  .nav-list a[aria-current='page'] {
+    color: var(--cyan);
+  }
+
+  /* Narrow screens: the list opens as a panel under the header */
+  @media (width < 52rem) {
+    .nav-list:popover-open {
+      position: fixed;
+      inset: var(--header-height) 0 auto 0;
+      display: flex;
+      flex-direction: column;
+      inline-size: 100%;
+      margin: 0;
+      padding: 0.5rem var(--gutter) 1.5rem;
+      border: 0;
+      border-block-end: 1px solid var(--border);
+      background-color: var(--bg-raised);
+      color: var(--text);
+    }
+
+    .nav-list a {
+      display: block;
+      padding-block: 0.75rem;
+      font-size: var(--text-base);
+    }
+  }
+
+  /* Wide screens: no toggle; the popover list is shown inline */
+  @media (width >= 52rem) {
+    .nav-toggle {
+      display: none;
+    }
+
+    .nav-list {
+      position: static;
+      display: flex;
+      gap: 2rem;
+      inline-size: auto;
+      block-size: auto;
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+      border: 0;
+      background: none;
+      color: inherit;
+    }
+  }
+</style>

@@ -1,0 +1,157 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import FeatureGrid from '../../components/FeatureGrid.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const getStaticPaths = (async () => {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({ params: { id: project.id }, props: { project } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { title, summary, category, status, stack, features, outcome, demo, repo } = project.data;
+const { Content } = await render(project);
+---
+
+<BaseLayout title={title} description={summary} type="article">
+  <article class="section">
+    <div class="container narrow">
+      <nav aria-label="Breadcrumb" class="breadcrumb">
+        <ol>
+          <li>
+            <a href="/">Home</a>
+          </li>
+          <li>
+            <a href="/projects/">Projects</a>
+          </li>
+          <li aria-current="page">{title}</li>
+        </ol>
+      </nav>
+
+      <header class="project-header">
+        <div class="project-meta">
+          <StatusBadge status={status} />
+          <span class="meta">{category}</span>
+        </div>
+        <h1>{title}</h1>
+        <p class="lede">{summary}</p>
+        {(demo || repo) && (
+          <div class="actions">
+            {demo?.type === 'public' && (
+              <a class="btn btn-primary" href={demo.url}>
+                Open the demo
+              </a>
+            )}
+            {demo?.type === 'on-request' && (
+              <a class="btn btn-primary" href="/#contact">
+                Request demo access
+              </a>
+            )}
+            {repo && (
+              <a class="btn btn-ghost" href={repo}>
+                View the code
+              </a>
+            )}
+          </div>
+        )}
+      </header>
+
+      <section class="project-section prose" aria-labelledby="overview-title">
+        <h2 id="overview-title">Overview</h2>
+        <Content />
+      </section>
+
+      {features.length > 0 && (
+        <section class="project-section" aria-labelledby="features-title">
+          <h2 id="features-title">What it includes</h2>
+          <FeatureGrid features={features} />
+        </section>
+      )}
+
+      <section class="project-section" aria-labelledby="stack-title">
+        <h2 id="stack-title">Built with</h2>
+        <ul class="tags">
+          {stack.map((item) => (
+            <li class="tag">{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      {outcome && (
+        <section class="project-section" aria-labelledby="outcome-title">
+          <h2 id="outcome-title">Outcome</h2>
+          <p class="outcome">{outcome}</p>
+        </section>
+      )}
+
+      <p class="back">
+        <a href="/projects/">Back to all projects</a>
+      </p>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .narrow {
+    inline-size: min(100% - 2 * var(--gutter), 56rem);
+  }
+
+  .breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-end: 2rem;
+    padding: 0;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    list-style: none;
+  }
+
+  .breadcrumb li + li::before {
+    margin-inline-end: 0.5rem;
+    content: '/';
+    color: var(--border-strong);
+  }
+
+  .project-header {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: start;
+    margin-block-end: clamp(3rem, 2rem + 3vw, 4.5rem);
+  }
+
+  .project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+
+  .project-section {
+    margin-block-end: clamp(3rem, 2rem + 2vw, 4rem);
+  }
+
+  /* Wider minimum in this narrow column so four features sit 2×2 rather than 3 + 1 */
+  .project-section :global(.feature-grid) {
+    --min: 20rem;
+  }
+
+  .project-section h2 {
+    margin-block-end: 1.25rem;
+    font-size: clamp(2rem, 1.6rem + 1.2vw, 2.5rem);
+  }
+
+  .outcome {
+    max-inline-size: var(--prose-max);
+    padding: 1.5rem 1.75rem;
+    border: 1px solid var(--border-strong);
+    border-inline-start: 3px solid var(--cyan);
+    background-color: var(--surface);
+  }
+</style>

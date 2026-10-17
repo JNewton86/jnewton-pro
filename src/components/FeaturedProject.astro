@@ -1,0 +1,98 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import FeatureGrid from './FeatureGrid.astro';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+}
+
+const { project } = Astro.props;
+const { title, summary, category, status, stack, features, demo } = project.data;
+const href = `/projects/${project.id}/`;
+---
+
+<article class="featured" aria-labelledby={`featured-${project.id}`}>
+  <header class="featured-header">
+    <div class="featured-meta">
+      <StatusBadge status={status} />
+      <span class="meta">{category}</span>
+      {demo?.type === 'on-request' && <span class="meta">Demo available on request</span>}
+    </div>
+    <h3 id={`featured-${project.id}`} class="featured-title">
+      <a href={href}>{title}</a>
+    </h3>
+    <p class="featured-summary">{summary}</p>
+  </header>
+
+  {features.length > 0 && <FeatureGrid features={features} level="h4" />}
+
+  <footer class="featured-footer">
+    <ul class="tags" aria-label="Built with">
+      {stack.map((item) => (
+        <li class="tag">{item}</li>
+      ))}
+    </ul>
+    <div class="actions">
+      <a class="btn btn-ghost" href={href}>
+        Read the case study
+      </a>
+      {demo?.type === 'on-request' && (
+        <a class="btn btn-secondary" href="/#contact">
+          Request demo access
+        </a>
+      )}
+      {demo?.type === 'public' && (
+        <a class="btn btn-secondary" href={demo.url}>
+          Open the demo
+        </a>
+      )}
+    </div>
+  </footer>
+</article>
+
+<style>
+  .featured {
+    display: grid;
+    gap: clamp(1.5rem, 1rem + 1.5vw, 2.25rem);
+    margin-block-end: 2px;
+    padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+  }
+
+  .featured-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-block-end: 0.875rem;
+  }
+
+  .featured-title {
+    margin-block-end: 0.75rem;
+    font-size: clamp(2rem, 1.5rem + 1.5vw, 2.5rem);
+  }
+
+  .featured-title a {
+    color: var(--heading);
+    text-decoration: none;
+  }
+
+  .featured-title a:hover {
+    color: var(--cyan);
+  }
+
+  .featured-summary {
+    max-inline-size: var(--prose-max);
+    color: var(--text-muted);
+  }
+
+  .featured-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+</style>

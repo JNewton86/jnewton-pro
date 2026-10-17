@@ -1,0 +1,55 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  features: CollectionEntry<'projects'>['data']['features'];
+  level?: 'h3' | 'h4';
+}
+
+const { features, level: Heading = 'h3' } = Astro.props;
+---
+
+<ul class="card-grid feature-grid">
+  {features.map(({ label, title, description }) => (
+    <li class="card feature">
+      {label && <p class="feature-label">{label}</p>}
+      <Heading class="feature-title">{title}</Heading>
+      <p class="feature-desc">{description}</p>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .feature-grid {
+    --min: 15rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .feature {
+    background-color: var(--bg-raised);
+  }
+
+  /* Product-given names like "Agent 01", so monospace fits */
+  .feature-label {
+    margin-block-end: 0.5rem;
+    color: var(--cyan-dim);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .feature-title {
+    margin-block-end: 0.5rem;
+    color: var(--heading);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+
+  .feature-desc {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+</style>

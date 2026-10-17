@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import ProjectCard from '../../components/ProjectCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout
+  title="Projects"
+  description="AI tools, automation systems, and engineering work built and shipped by Jeff Newton."
+>
+  <section class="section" aria-labelledby="projects-title">
+    <div class="container">
+      <h1 id="projects-title">Projects</h1>
+      <p class="lede intro">
+        AI tools, automation systems, and engineering work I've built and shipped.
+      </p>
+      <div class="card-grid">
+        {projects.map((project) => (
+          <ProjectCard project={project} level="h2" />
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  h1 {
+    margin-block-end: 1rem;
+  }
+
+  .intro {
+    max-inline-size: 36rem;
+    margin-block-end: 3rem;
+  }
+</style>
