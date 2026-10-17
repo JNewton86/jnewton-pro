@@ -44,28 +44,49 @@ const origin = remoteOrigin ?? ORIGIN;
 const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless=new', '--no-sandbox'] });
 const failures = [];
 
+// Performance varies run to run (especially on shared CI machines), so each page is
+// measured RUNS times and judged on the median, as Lighthouse CI does by default.
+const RUNS = 3;
+const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+
+async function audit(url) {
+  const result = await lighthouse(
+    url,
+    { port: chrome.port, output: 'html', logLevel: 'error' },
+    {
+      extends: 'lighthouse:default',
+      settings: {
+        onlyCategories: Object.keys(BUDGETS),
+        skipAudits: remoteOrigin ? [] : SKIP_LOCAL,
+      },
+    },
+  );
+  if (!result) throw new Error(`Lighthouse returned no result for ${url}`);
+  return result;
+}
+
 try {
   await mkdir(REPORT_DIR, { recursive: true });
   for (const path of PAGES) {
-    const result = await lighthouse(
-      `${origin}${path}`,
-      { port: chrome.port, output: 'html', logLevel: 'error' },
-      {
-        extends: 'lighthouse:default',
-        settings: {
-          onlyCategories: Object.keys(BUDGETS),
-          skipAudits: remoteOrigin ? [] : SKIP_LOCAL,
-        },
-      },
+    const runs = [];
+    for (let i = 0; i < RUNS; i++) runs.push(await audit(`${origin}${path}`));
+    const medianScore = (id) => median(runs.map((r) => r.lhr.categories[id]?.score ?? 0));
+
+    // Keep the report from the run closest to the median performance score.
+    const target = medianScore('performance');
+    const representative = runs.reduce((best, r) =>
+      Math.abs(r.lhr.categories.performance.score - target) <
+      Math.abs(best.lhr.categories.performance.score - target)
+        ? r
+        : best,
     );
-    if (!result) throw new Error(`Lighthouse returned no result for ${path}`);
-    const { categories, audits } = result.lhr;
+    const { categories, audits } = representative.lhr;
 
     const name = path === '/' ? 'home' : path.replaceAll('/', '-').replace(/^-|-$/g, '');
-    await writeFile(`${REPORT_DIR}/${name}.html`, result.report);
+    await writeFile(`${REPORT_DIR}/${name}.html`, representative.report);
 
     const scores = Object.entries(BUDGETS).map(([id, min]) => {
-      const score = categories[id]?.score ?? 0;
+      const score = medianScore(id);
       if (score < min) {
         const failing = categories[id].auditRefs
           .map((ref) => audits[ref.id])
@@ -77,7 +98,7 @@ try {
       }
       return `${id} ${Math.round(score * 100)}`;
     });
-    console.log(`${path.padEnd(28)} ${scores.join('  ')}`);
+    console.log(`${path.padEnd(28)} ${scores.join('  ')}  (median of ${RUNS})`);
   }
 } finally {
   chrome.kill();
