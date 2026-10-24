@@ -1,0 +1,22 @@
+---
+import DiscoveryBoard from '../../../components/portal/DiscoveryBoard.astro';
+import PortalLayout from '../../../components/portal/PortalLayout.astro';
+import { readDiscovery, storeConfigured } from '../../../lib/portal/store';
+
+export const prerender = false;
+
+const client = Astro.locals.client;
+if (!client) return new Response(null, { status: 404 });
+
+const canSave = storeConfigured();
+const state = await readDiscovery(client.slug);
+---
+
+<PortalLayout
+  client={client}
+  section="discovery"
+  title="Discovery board"
+  lede="The questions we work through together, with why each one matters and room to record the answers."
+>
+  <DiscoveryBoard client={client} state={state} canSave={canSave} />
+</PortalLayout>

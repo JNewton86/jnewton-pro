@@ -2,7 +2,7 @@
 
 Portfolio and AI-consulting site for Jeff Newton — technical product manager and applied AI developer.
 
-Built with [Astro](https://astro.build) as a static site (no client-side framework; the only JavaScript is a few lines that close the mobile menu). Hosted on Vercel.
+Built with [Astro](https://astro.build) as a static site (no client-side framework; the public pages ship only a few lines of JavaScript to close the mobile menu). Hosted on Vercel. A small passcode-gated client portal under `/clients/` renders on demand through the Vercel adapter.
 
 ## Local development
 
@@ -22,7 +22,15 @@ npm run lighthouse   # after a build: Lighthouse budgets on key pages (needs Chr
 
 `npm run lighthouse -- --url https://jnewton.pro` runs the same budgets against the live site.
 
-The Content Security Policy only applies to production builds, so check CSP-sensitive changes with `npm run build && npm run preview`.
+The Content Security Policy only applies to production builds, so check CSP-sensitive changes with `npm run build && npm run preview` (static pages; the portal's on-demand pages are checked on a Vercel preview deployment).
+
+## Client portal
+
+Each consulting client gets a private space at `/clients/<slug>/` with a project overview, a discovery board whose notes save server-side, and gated files. It is passcode-protected, `noindex`, and excluded from `robots.txt` and the sitemap.
+
+- Register a client in `src/data/clients/` (see `aaplus/`). The slug is the URL.
+- Set the environment variables in `.env.example` (locally in `.env`, on Vercel in the project settings): a session secret, the passcode for each slug, Upstash Redis for notes, and a private Vercel Blob store for files.
+- Upload files to Blob under `clients/<slug>/<file-name>`; they appear on the client's Files page. Nothing client-specific is committed to this public repo or placed in `public/`.
 
 ## Search and AI visibility
 
@@ -35,20 +43,24 @@ Generated at build time from `src/site.config.ts`, `src/data/resume.ts`, and the
 
 ## Where things live
 
-| Path                        | What it is                                                                         |
-| --------------------------- | ---------------------------------------------------------------------------------- |
-| `src/site.config.ts`        | Identity (name, contact, social links) and the main navigation — edit details here |
-| `src/data/resume.ts`        | Experience, education, certifications, skills, and stats shown on the home page    |
-| `src/content/projects/*.md` | One file per project; the file name is the URL slug                                |
-| `src/content.config.ts`     | The schema every project file must match (the build fails if one doesn't)          |
-| `src/styles/global.css`     | Design tokens (colors, type scale, spacing) and shared styles                      |
-| `src/components/`           | Page sections and reusable pieces                                                  |
-| `src/pages/`                | Routes: home, projects, project pages, 404, robots.txt, llms.txt, preview images   |
-| `src/lib/`                  | Structured data and link-preview image builders                                    |
-| `public/assets/`            | Files served as-is, e.g. the résumé PDF                                            |
-| `scripts/check-dist.mjs`    | Post-build checks: links, anchors, CSP coverage, inline styles, JSON-LD, og:image  |
-| `scripts/lighthouse.mjs`    | Lighthouse budgets (accessibility/SEO/best practices 100, performance ≥ 95)        |
-| `vercel.json`               | Security headers, redirects from the old `.html` URLs, caching                     |
+| Path                        | What it is                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/site.config.ts`        | Identity (name, contact, social links) and the main navigation — edit details here              |
+| `src/data/resume.ts`        | Experience, education, certifications, skills, and stats shown on the home page                 |
+| `src/content/projects/*.md` | One file per project; the file name is the URL slug                                             |
+| `src/content.config.ts`     | The schema every project file must match (the build fails if one doesn't)                       |
+| `src/styles/global.css`     | Design tokens (colors, type scale, spacing) and shared styles                                   |
+| `src/components/`           | Page sections and reusable pieces                                                               |
+| `src/pages/`                | Routes: home, projects, project pages, 404, robots.txt, llms.txt, preview images, client portal |
+| `src/lib/`                  | Structured data and link-preview image builders                                                 |
+| `public/assets/`            | Files served as-is, e.g. the résumé PDF                                                         |
+| `src/middleware.ts`         | Passcode gate for the client portal                                                             |
+| `src/data/clients/`         | Client portal registry and per-client content (discovery questions)                             |
+| `src/lib/portal/`           | Portal sessions, note storage (Upstash Redis), gated files (Vercel Blob)                        |
+| `scripts/serve-static.mjs`  | Local server for the built static pages (`npm run preview`); used by Lighthouse                 |
+| `scripts/check-dist.mjs`    | Post-build checks: links, anchors, CSP coverage, inline styles, JSON-LD, og:image               |
+| `scripts/lighthouse.mjs`    | Lighthouse budgets (accessibility/SEO/best practices 100, performance ≥ 95)                     |
+| `vercel.json`               | Security headers, redirects from the old `.html` URLs, caching                                  |
 
 ## Adding a project
 

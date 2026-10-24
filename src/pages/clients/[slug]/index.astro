@@ -1,0 +1,109 @@
+---
+import PortalLayout from '../../../components/portal/PortalLayout.astro';
+import { filesConfigured } from '../../../lib/portal/files';
+import { readDiscovery, storeConfigured } from '../../../lib/portal/store';
+
+export const prerender = false;
+
+const client = Astro.locals.client;
+if (!client) return new Response(null, { status: 404 });
+
+const base = `/clients/${client.slug}/`;
+const state = storeConfigured() ? await readDiscovery(client.slug) : null;
+const total = client.discovery.reduce((n, s) => n + s.questions.length, 0);
+const answered = Object.values(state?.answers ?? {}).filter((a) => a.status === 'answered').length;
+const followUps = Object.values(state?.answers ?? {}).filter((a) => a.status === 'followup').length;
+---
+
+<PortalLayout client={client} section="overview" title={client.project} lede={client.summary}>
+  <div class="overview">
+    <section class="card" aria-labelledby="scope-title">
+      <h2 id="scope-title">Scope</h2>
+      <ul class="workstreams">
+        {client.workstreams.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="discovery-title">
+      <h2 id="discovery-title">Discovery board</h2>
+      {state ? (
+        <p>
+          {answered} of {total} questions answered
+          {followUps > 0 && `, ${followUps} marked for follow-up`}.
+        </p>
+      ) : (
+        <p>{total} questions to work through together.</p>
+      )}
+      <p class="actions">
+        <a class="btn btn-primary" href={`${base}discovery/`}>
+          Open the board
+        </a>
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="files-title">
+      <h2 id="files-title">Files</h2>
+      <p>
+        {filesConfigured()
+          ? 'Design explorations and shared documents, available to anyone with the passcode.'
+          : 'File sharing is not set up on this deployment yet.'}
+      </p>
+      <p class="actions">
+        <a class="btn btn-ghost" href={`${base}files/`}>
+          Browse files
+        </a>
+      </p>
+    </section>
+
+    {client.links.length > 0 && (
+      <section class="card" aria-labelledby="links-title">
+        <h2 id="links-title">Links</h2>
+        <ul class="links">
+          {client.links.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+              {link.note && <span class="meta"> {link.note}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</PortalLayout>
+
+<style>
+  .overview {
+    display: grid;
+    gap: 2px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  h2 {
+    font-size: var(--text-h3);
+    margin-block-end: 0;
+  }
+
+  .workstreams,
+  .links {
+    display: grid;
+    gap: 0.5rem;
+    padding-inline-start: 1.1rem;
+  }
+
+  .links .meta {
+    display: block;
+  }
+
+  .actions {
+    margin-block-start: auto;
+    padding-block-start: 0.5rem;
+  }
+</style>
