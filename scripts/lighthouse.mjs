@@ -1,10 +1,10 @@
 // Runs Lighthouse (mobile, simulated throttling) against the production build and fails if
 // any category drops below its budget. Lighthouse's accessibility audits are powered by axe-core.
 // Usage: npm run build && npm run lighthouse   (HTML reports land in lighthouse-reports/)
-import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import * as chromeLauncher from 'chrome-launcher';
 import lighthouse from 'lighthouse';
+import { serveStatic } from './serve-static.mjs';
 
 const PORT = 4331;
 const ORIGIN = `http://localhost:${PORT}`;
@@ -19,27 +19,8 @@ const REPORT_DIR = 'lighthouse-reports';
 const remoteArg = process.argv.indexOf('--url');
 const remoteOrigin = remoteArg > -1 ? process.argv[remoteArg + 1].replace(/\/$/, '') : null;
 
-async function startPreview() {
-  const server = spawn(
-    process.execPath,
-    ['node_modules/astro/bin/astro.mjs', 'preview', '--port', String(PORT)],
-    {
-      stdio: 'ignore',
-    },
-  );
-  for (let attempt = 0; attempt < 60; attempt++) {
-    try {
-      if ((await fetch(ORIGIN)).ok) return server;
-    } catch {
-      // not up yet
-    }
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  server.kill();
-  throw new Error('astro preview did not start');
-}
-
-const server = remoteOrigin ? null : await startPreview();
+// The pages audited are static; scripts/serve-static.mjs serves the build the way Vercel does.
+const server = remoteOrigin ? null : await serveStatic(PORT);
 const origin = remoteOrigin ?? ORIGIN;
 const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless=new', '--no-sandbox'] });
 const failures = [];
@@ -102,7 +83,7 @@ try {
   }
 } finally {
   chrome.kill();
-  server?.kill();
+  server?.close();
 }
 
 if (failures.length) {

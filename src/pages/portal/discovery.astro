@@ -1,0 +1,23 @@
+---
+import DiscoveryBoard from '../../components/portal/DiscoveryBoard.astro';
+import PortalLayout from '../../components/portal/PortalLayout.astro';
+import { readDiscovery, storeConfigured } from '../../lib/portal/store';
+
+export const prerender = false;
+
+const client = Astro.locals.client;
+if (!client) return new Response(null, { status: 404 });
+
+const state = await readDiscovery(client.slug);
+// Never allow edits over notes that exist but couldn't be loaded: a save would overwrite them.
+const canSave = storeConfigured() && state.available;
+---
+
+<PortalLayout
+  client={client}
+  section="discovery"
+  title="Discovery board"
+  lede="The questions we work through together, with why each one matters and room to record the answers."
+>
+  <DiscoveryBoard client={client} state={state} canSave={canSave} />
+</PortalLayout>

@@ -11,6 +11,7 @@ Copy changes should be checked against both — don't make the site read as job-
 ## Stack
 
 - Astro 7, static output, TypeScript (strictest). No client framework; ship JS only when there's no HTML/CSS way.
+- `@astrojs/vercel` adapter, used only by the routes that set `export const prerender = false` (the client portal under `/portal/` and `/api/portal/`). Everything else stays prerendered; the sitemap lists only prerendered pages.
 - Hosted on Vercel (Pro). PRs get preview deployments; `master` deploys to production.
 - Fonts are self-hosted from the Fontsource packages via Astro's `fonts` config (local provider): Bebas Neue (display), DM Sans (body), Space Mono (code only).
 - Tooling: Prettier, ESLint (astro + jsx-a11y via `eslint-plugin-jsx-a11y-x`, because the original plugin doesn't support ESLint 10), `astro check`, and `scripts/check-dist.mjs`. CI runs all of them (`npm run verify` locally).
@@ -24,13 +25,14 @@ Copy changes should be checked against both — don't make the site read as job-
 - `src/components/`, `src/layouts/BaseLayout.astro` (head/meta/fonts), `src/pages/`.
 - `src/styles/global.css` — design tokens and shared styles; component styles are scoped in each component.
 - `vercel.json` — security headers, redirects from old `.html` URLs, caching.
+- Client portal (passcode-gated project spaces for consulting clients): `src/data/clients/` (registry and per-client content such as discovery questions), `src/lib/portal/` (sessions, Redis store, Blob files), `src/middleware.ts` (the gate), `src/pages/portal/` and `src/pages/api/portal/`, `src/components/portal/`. Visitors sign in at `/portal/` with a client code and passcode; the client lives in the signed session cookie, never in the URL. Config is server-only via `astro:env` (see `.env.example`); passcodes are never in the repo. Client files are never committed or put in `public/` (the repo is public and the CDN serves `public/` before any check runs) — they live in a private Vercel Blob store and stream through the gated API route.
 
 ## Conventions
 
 - **Content truthfulness:** project and résumé copy must come from Jeff or existing site copy. Never invent claims, metrics, or features — leave a gap and flag it instead.
 - **Design direction (decided 2026-10-16):** keep the brand (navy grid, cyan primary, amber secondary, Bebas/DM Sans, terminal hero) but avoid generated-looking tells: no numbered section labels unless content is a real sequence, no all-caps eyebrow label above every heading, no scroll-reveal on every section, no hover lift on non-clickable things, no `→`/`↗` suffixes, no middle-dot meta strings. Monospace only for code (terminal, tech tags). The hero load sequence is the only animation.
 - **Accessibility:** text colors are checked against WCAG AA on every background (see comments in `global.css`); font sizes in `rem`, never set on `html`; visible `:focus-visible` outlines; respect `prefers-reduced-motion`; layouts must reflow at 320px.
-- **CSP:** Astro's `security.csp` hashes inline scripts/styles into a `<meta>`; header-only directives are in `vercel.json`. No inline `style=""`, no `define:vars`, no Shiki (Prism is configured — add a Prism theme when code blocks appear). Test CSP with `npm run build && npm run preview`, not `dev`.
+- **CSP:** Astro's `security.csp` hashes inline scripts/styles into a `<meta>` on prerendered pages and into a `Content-Security-Policy` response header on on-demand pages; header-only directives are in `vercel.json`. No inline `style=""`, no `define:vars`, no Shiki (Prism is configured — add a Prism theme when code blocks appear). Test CSP on static pages with `npm run build && npm run preview` (a small static server in `scripts/serve-static.mjs`; `astro preview` is unsupported by the Vercel adapter), and on portal pages on the PR's Vercel preview deployment — `dev` applies no CSP.
 - Before finishing UI work, look at it: build, preview, and screenshot at desktop and phone widths (headless Chrome's minimum window is 500px — use an iframe page for 390/320px).
 
 ## Hosting facts (as of 2026-10-17)
@@ -41,6 +43,7 @@ Copy changes should be checked against both — don't make the site read as job-
 - Email is Microsoft 365 through GoDaddy: MX `mx1/mx2-us1.ppe-hosted.com`, SPF TXT (`include:secureserver.net`), an `onmicrosoft.com` verification TXT, and `autodiscover`/`email`/`lyncdiscover` CNAMEs. **Never change these when editing DNS.**
 - GoDaddy Website Builder has lapsed and is no longer used. GitHub Pages is disabled.
 - Vercel actions (CLI or MCP) always prompt Jeff for approval, by his choice.
+- Portal storage: Upstash Redis (Vercel Marketplace integration, injects `KV_REST_API_URL`/`KV_REST_API_TOKEN`) and a private Vercel Blob store (`BLOB_READ_WRITE_TOKEN`). Session signing key `PORTAL_SESSION_SECRET` and the `PORTAL_PASSCODES` JSON are Vercel environment variables.
 
 ## Roadmap
 

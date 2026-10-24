@@ -1,0 +1,131 @@
+---
+import PortalLayout from '../../components/portal/PortalLayout.astro';
+import { filesConfigured, listFiles } from '../../lib/portal/files';
+
+export const prerender = false;
+
+const client = Astro.locals.client;
+if (!client) return new Response(null, { status: 404 });
+
+const configured = filesConfigured();
+const files = configured ? await listFiles(client.slug) : [];
+const images = files.filter((f) => f.kind === 'image');
+const documents = files.filter((f) => f.kind !== 'image');
+const fileUrl = (name: string) => `/api/portal/file/?name=${encodeURIComponent(name)}`;
+
+const formatSize = (bytes: number) =>
+  bytes >= 1_048_576
+    ? `${(bytes / 1_048_576).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<PortalLayout
+  client={client}
+  section="files"
+  title="Files"
+  lede="Design explorations and documents for this project. Everything here is private to people with the passcode."
+>
+  {!configured && (
+    <p class="card">
+      File sharing is not set up on this deployment yet (missing BLOB_READ_WRITE_TOKEN).
+    </p>
+  )}
+
+  {configured && files.length === 0 && (
+    <p class="card">Nothing has been shared yet. Files appear here as soon as they're uploaded.</p>
+  )}
+
+  {images.length > 0 && (
+    <section class="group" aria-labelledby="images-title">
+      <h2 id="images-title">Design explorations</h2>
+      <ul class="gallery">
+        {images.map((file) => (
+          <li class="card">
+            <a href={fileUrl(file.name)}>
+              <img src={fileUrl(file.name)} alt={`Preview of ${file.name}`} loading="lazy" />
+            </a>
+            <p class="file-name">{file.name}</p>
+            <p class="meta">
+              {formatSize(file.size)}, uploaded {formatDate(file.uploadedAt)}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {documents.length > 0 && (
+    <section class="group" aria-labelledby="documents-title">
+      <h2 id="documents-title">Documents</h2>
+      <ul class="documents">
+        {documents.map((file) => (
+          <li class="card doc">
+            <div>
+              <a href={fileUrl(file.name)}>{file.name}</a>
+              <p class="meta">
+                {formatSize(file.size)}, uploaded {formatDate(file.uploadedAt)}
+              </p>
+            </div>
+            <a class="btn btn-ghost" href={fileUrl(file.name)} download={file.name}>
+              Download
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</PortalLayout>
+
+<style>
+  .group + .group {
+    margin-block-start: 3rem;
+  }
+
+  h2 {
+    font-size: var(--text-h3);
+    margin-block-end: 1.25rem;
+  }
+
+  .gallery,
+  .documents {
+    display: grid;
+    gap: 2px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gallery {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  }
+
+  .gallery img {
+    inline-size: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+    border: 1px solid var(--border);
+    background-color: var(--bg);
+  }
+
+  .file-name {
+    margin-block-start: 0.75rem;
+    color: var(--heading);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .doc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+  }
+
+  .doc a:not(.btn) {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+</style>

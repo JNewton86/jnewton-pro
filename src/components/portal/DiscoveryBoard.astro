@@ -1,0 +1,701 @@
+---
+// The discovery board: questions grouped by section, each with a status and a notes field.
+// Rendered with the saved answers so it reads fully without JavaScript; the script saves edits
+// as they happen, keeps the progress counts current, and exports the notes as Markdown.
+import type { ClientPortal } from '../../data/clients';
+import { ANSWER_STATUSES, type AnswerStatus, type DiscoveryState } from '../../lib/portal/store';
+
+interface Props {
+  client: ClientPortal;
+  state: DiscoveryState;
+  /** Whether notes can be saved on this deployment. */
+  canSave: boolean;
+}
+
+const { client, state, canSave } = Astro.props;
+
+const STATUS_LABELS: Record<AnswerStatus, string> = {
+  open: 'Open',
+  answered: 'Answered',
+  followup: 'Follow-up',
+  na: 'Not applicable',
+};
+
+const total = client.discovery.reduce((n, s) => n + s.questions.length, 0);
+const countBy = (status: AnswerStatus, ids?: Set<string>) =>
+  Object.entries(state.answers).filter(([id, a]) => a.status === status && (!ids || ids.has(id)))
+    .length;
+const answered = countBy('answered');
+const followUps = countBy('followup');
+const meta = state.meta;
+---
+
+<div
+  class="board"
+  id="discovery-board"
+  data-slug={client.slug}
+  data-can-save={canSave ? 'true' : 'false'}
+>
+  <div class="summary card">
+    <div class="progress">
+      <label for="overall-progress">
+        <span id="overall-count">{answered}</span> of {total} answered
+        <span id="overall-followups">{followUps > 0 ? `, ${followUps} to follow up` : ''}</span>
+      </label>
+      <progress id="overall-progress" max={total} value={answered}></progress>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" type="button" id="copy-notes">
+        Copy notes as Markdown
+      </button>
+      <button class="btn btn-ghost" type="button" id="copy-open">
+        Copy open questions
+      </button>
+      <button class="btn btn-ghost" type="button" id="download-notes">
+        Download .md
+      </button>
+      <button class="btn btn-ghost danger" type="button" id="clear-notes" disabled={!canSave}>
+        Clear all notes
+      </button>
+    </div>
+    <p class="save-state" id="save-state" role="status" aria-live="polite">
+      {canSave
+        ? 'Changes save automatically.'
+        : state.available
+          ? 'Saving is not available on this deployment.'
+          : 'Saved notes could not be loaded right now, so editing is paused. Reload in a moment.'}
+    </p>
+  </div>
+
+  <fieldset class="meeting card" id="meeting">
+    <legend>Meeting</legend>
+    <div class="meeting-grid">
+      <div class="field">
+        <label for="meta-date">Date</label>
+        <input id="meta-date" name="date" type="date" value={meta?.date ?? ''} data-meta="date" />
+      </div>
+      <div class="field">
+        <label for="meta-attendees">Attendees</label>
+        <input
+          id="meta-attendees"
+          name="attendees"
+          type="text"
+          value={meta?.attendees ?? ''}
+          data-meta="attendees"
+          autocomplete="off"
+        />
+      </div>
+      <div class="field wide">
+        <label for="meta-notes">General notes</label>
+        <textarea
+          id="meta-notes"
+          name="notes"
+          rows="2"
+          data-meta="notes"
+        >{meta?.notes ?? ''}</textarea>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="layout">
+    <nav class="rail" aria-label="Board sections">
+      <ul>
+        {client.discovery.map((section) => {
+          const ids = new Set(section.questions.map((q) => q.id));
+          return (
+            <li>
+              <a href={`#section-${section.id}`} data-rail={section.id}>
+                <span>{section.title}</span>
+                <span class="count" data-rail-count={section.id}>
+                  {countBy('answered', ids)}/{section.questions.length}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+
+    <div class="sections">
+      {client.discovery.map((section) => {
+        const ids = new Set(section.questions.map((q) => q.id));
+        return (
+          <section
+            class="board-section"
+            id={`section-${section.id}`}
+            data-section={section.id}
+            aria-labelledby={`section-${section.id}-title`}
+          >
+            <div class="section-head">
+              <h2 id={`section-${section.id}-title`}>{section.title}</h2>
+              <label class="section-progress">
+                <span data-section-count={section.id}>
+                  {countBy('answered', ids)} of {section.questions.length}
+                </span>
+                <progress
+                  max={section.questions.length}
+                  value={countBy('answered', ids)}
+                  data-section-progress={section.id}
+                />
+              </label>
+            </div>
+            <p class="lead">{section.lead}</p>
+            {section.callout && <p class="callout">{section.callout}</p>}
+
+            {section.questions.map((q) => {
+              const saved = state.answers[q.id];
+              const status: AnswerStatus = saved?.status ?? 'open';
+              return (
+                <article class="question card" data-question={q.id} data-status={status}>
+                  <div class="question-head">
+                    <h3 id={`q-${q.id}-title`}>{q.question}</h3>
+                    <div class="status-field">
+                      <label class="visually-hidden" for={`status-${q.id}`}>
+                        Status for: {q.question}
+                      </label>
+                      <select id={`status-${q.id}`} class="status" data-status-for={q.id}>
+                        {ANSWER_STATUSES.map((value) => (
+                          <option value={value} selected={value === status}>
+                            {STATUS_LABELS[value]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <p class="why">{q.why}</p>
+                  <label class="visually-hidden" for={`answer-${q.id}`}>
+                    Notes for: {q.question}
+                  </label>
+                  <textarea
+                    id={`answer-${q.id}`}
+                    class="answer"
+                    rows="2"
+                    placeholder="Answer and notes"
+                    data-answer-for={q.id}
+                  >{saved?.answer ?? ''}</textarea>
+                </article>
+              );
+            })}
+          </section>
+        );
+      })}
+    </div>
+  </div>
+</div>
+
+<script>
+  type Status = 'open' | 'answered' | 'followup' | 'na';
+  const STATUS_LABEL: Record<Status, string> = {
+    open: 'Open',
+    answered: 'Answered',
+    followup: 'Follow-up',
+    na: 'Not applicable',
+  };
+
+  const board = document.getElementById('discovery-board');
+  if (board instanceof HTMLElement) init(board);
+
+  function init(root: HTMLElement) {
+    const slug = root.dataset['slug'] ?? '';
+    const canSave = root.dataset['canSave'] === 'true';
+    const endpoint = '/api/portal/discovery/';
+    const saveState = root.querySelector<HTMLElement>('#save-state');
+
+    const questions = [...root.querySelectorAll<HTMLElement>('[data-question]')];
+    const statusOf = (card: HTMLElement) =>
+      card.querySelector<HTMLSelectElement>('select.status')?.value as Status;
+    const answerOf = (card: HTMLElement) =>
+      card.querySelector<HTMLTextAreaElement>('textarea.answer')?.value ?? '';
+
+    // Progress counts, overall and per section
+    function refreshCounts() {
+      let answered = 0;
+      let followUps = 0;
+      for (const section of root.querySelectorAll<HTMLElement>('[data-section]')) {
+        const id = section.dataset['section'] ?? '';
+        const cards = [...section.querySelectorAll<HTMLElement>('[data-question]')];
+        const done = cards.filter((c) => statusOf(c) === 'answered').length;
+        answered += done;
+        followUps += cards.filter((c) => statusOf(c) === 'followup').length;
+        const count = root.querySelector(`[data-section-count="${id}"]`);
+        if (count) count.textContent = `${done} of ${cards.length}`;
+        const bar = root.querySelector<HTMLProgressElement>(`[data-section-progress="${id}"]`);
+        if (bar) bar.value = done;
+        const rail = root.querySelector(`[data-rail-count="${id}"]`);
+        if (rail) rail.textContent = `${done}/${cards.length}`;
+        root.querySelector(`[data-rail="${id}"]`)?.classList.toggle('done', done === cards.length);
+      }
+      const overall = root.querySelector<HTMLProgressElement>('#overall-progress');
+      if (overall) overall.value = answered;
+      const count = root.querySelector('#overall-count');
+      if (count) count.textContent = String(answered);
+      const follow = root.querySelector('#overall-followups');
+      if (follow) follow.textContent = followUps > 0 ? `, ${followUps} to follow up` : '';
+    }
+
+    // Saving: one in-flight request per key, debounced, with the latest payload winning
+    const timers = new Map<string, number>();
+    const pending = new Map<string, Record<string, unknown>>();
+    const inFlight = new Set<string>();
+
+    function setSaveState(text: string, kind: 'ok' | 'busy' | 'error') {
+      if (!saveState) return;
+      saveState.textContent = text;
+      saveState.dataset['kind'] = kind;
+    }
+
+    async function flush(key: string) {
+      const payload = pending.get(key);
+      if (!payload || inFlight.has(key)) return;
+      pending.delete(key);
+      inFlight.add(key);
+      setSaveState('Saving…', 'busy');
+      try {
+        const response = await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (response.status === 401) {
+          setSaveState('Your session expired. Reload the page to sign in again.', 'error');
+          return;
+        }
+        if (!response.ok) throw new Error(String(response.status));
+        if (pending.size === 0 && inFlight.size === 1) setSaveState('All changes saved.', 'ok');
+      } catch {
+        pending.set(key, payload);
+        setSaveState(
+          'Could not save. Check your connection; unsaved changes are kept here.',
+          'error',
+        );
+      } finally {
+        inFlight.delete(key);
+        if (pending.has(key)) window.setTimeout(() => flush(key), 1500);
+      }
+    }
+
+    function queue(key: string, payload: Record<string, unknown>) {
+      if (!canSave) return;
+      pending.set(key, payload);
+      window.clearTimeout(timers.get(key));
+      timers.set(
+        key,
+        window.setTimeout(() => flush(key), 600),
+      );
+    }
+
+    function queueAnswer(card: HTMLElement) {
+      const id = card.dataset['question'] ?? '';
+      card.dataset['status'] = statusOf(card);
+      queue(`q:${id}`, { kind: 'answer', id, status: statusOf(card), answer: answerOf(card) });
+    }
+
+    function queueMeta() {
+      const value = (name: string) =>
+        root.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-meta="${name}"]`)
+          ?.value ?? '';
+      queue('meta', {
+        kind: 'meta',
+        date: value('date'),
+        attendees: value('attendees'),
+        notes: value('notes'),
+      });
+    }
+
+    root.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLSelectElement) || !target.matches('select.status')) return;
+      const card = target.closest<HTMLElement>('[data-question]');
+      if (!card) return;
+      queueAnswer(card);
+      refreshCounts();
+    });
+
+    root.addEventListener('input', (event) => {
+      const target = event.target;
+      if (target instanceof HTMLTextAreaElement && target.matches('textarea.answer')) {
+        const card = target.closest<HTMLElement>('[data-question]');
+        if (!card) return;
+        // Typing an answer into an open question marks it answered
+        const select = card.querySelector<HTMLSelectElement>('select.status');
+        if (select && select.value === 'open' && target.value.trim() !== '') {
+          select.value = 'answered';
+          refreshCounts();
+        }
+        queueAnswer(card);
+      } else if (target instanceof HTMLElement && target.matches('[data-meta]')) {
+        queueMeta();
+      }
+    });
+
+    // Leaving with unsaved edits
+    window.addEventListener('beforeunload', (event) => {
+      if (pending.size > 0 || inFlight.size > 0) event.preventDefault();
+    });
+
+    // Markdown export, built from what is on the page
+    function markdown(openOnly: boolean): string {
+      const title = document.querySelector('.client-name')?.textContent?.trim() ?? 'Client';
+      const lines = [`# ${title}: discovery notes`, ''];
+      const meta = (name: string) =>
+        root
+          .querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-meta="${name}"]`)
+          ?.value.trim() ?? '';
+      const when = [meta('date'), meta('attendees')].filter(Boolean).join(' with ');
+      if (when) lines.push(`Meeting: ${when}`, '');
+      if (!openOnly && meta('notes')) lines.push(`General notes: ${meta('notes')}`, '');
+      for (const section of root.querySelectorAll<HTMLElement>('[data-section]')) {
+        const heading = section.querySelector('h2')?.textContent?.trim() ?? '';
+        const rows = [...section.querySelectorAll<HTMLElement>('[data-question]')].filter((c) => {
+          const status = statusOf(c);
+          return openOnly ? status === 'open' || status === 'followup' : status !== 'na';
+        });
+        if (rows.length === 0) continue;
+        lines.push(`## ${heading}`, '');
+        for (const card of rows) {
+          const question = card.querySelector('h3')?.textContent?.trim() ?? '';
+          lines.push(`- [${STATUS_LABEL[statusOf(card)]}] ${question}`);
+          const answer = answerOf(card).trim();
+          if (answer && !openOnly) lines.push(`  - ${answer.replaceAll('\n', '\n    ')}`);
+        }
+        lines.push('');
+      }
+      return lines.join('\n');
+    }
+
+    async function copyText(text: string, done: string) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setSaveState(done, 'ok');
+      } catch {
+        setSaveState('Copying is blocked in this browser; use Download instead.', 'error');
+      }
+    }
+
+    root.querySelector('#copy-notes')?.addEventListener('click', () => {
+      void copyText(markdown(false), 'Notes copied as Markdown.');
+    });
+    root.querySelector('#copy-open')?.addEventListener('click', () => {
+      void copyText(markdown(true), 'Open questions copied.');
+    });
+    root.querySelector('#download-notes')?.addEventListener('click', () => {
+      const blob = new Blob([markdown(false)], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${slug}-discovery-notes.md`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+
+    // Clearing everything takes two clicks within a few seconds
+    const clearButton = root.querySelector<HTMLButtonElement>('#clear-notes');
+    let armed = false;
+    clearButton?.addEventListener('click', async () => {
+      if (!armed) {
+        armed = true;
+        clearButton.textContent = 'Click again to clear everything';
+        window.setTimeout(() => {
+          armed = false;
+          clearButton.textContent = 'Clear all notes';
+        }, 4000);
+        return;
+      }
+      armed = false;
+      clearButton.textContent = 'Clear all notes';
+      clearButton.disabled = true;
+      try {
+        const response = await fetch(endpoint, { method: 'DELETE' });
+        if (!response.ok) throw new Error(String(response.status));
+        for (const card of questions) {
+          const select = card.querySelector<HTMLSelectElement>('select.status');
+          const answer = card.querySelector<HTMLTextAreaElement>('textarea.answer');
+          if (select) select.value = 'open';
+          if (answer) answer.value = '';
+          card.dataset['status'] = 'open';
+        }
+        for (const field of root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+          '[data-meta]',
+        ))
+          field.value = '';
+        refreshCounts();
+        setSaveState('All notes cleared.', 'ok');
+      } catch {
+        setSaveState('Could not clear notes. Try again.', 'error');
+      } finally {
+        clearButton.disabled = false;
+      }
+    });
+  }
+</script>
+
+<style>
+  .board {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .summary {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .progress label {
+    display: block;
+    margin-block-end: 0.5rem;
+    color: var(--heading);
+    font-weight: 600;
+  }
+
+  progress {
+    inline-size: 100%;
+    block-size: 0.5rem;
+    appearance: none;
+    border: 0;
+    border-radius: var(--radius);
+    background-color: var(--bg);
+    overflow: hidden;
+  }
+
+  progress::-webkit-progress-bar {
+    background-color: var(--bg);
+  }
+
+  progress::-webkit-progress-value {
+    background-color: var(--cyan);
+    transition: inline-size 0.3s ease;
+  }
+
+  progress::-moz-progress-bar {
+    background-color: var(--cyan);
+  }
+
+  .save-state {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .save-state[data-kind='error'] {
+    color: var(--amber);
+  }
+
+  .danger {
+    margin-inline-start: auto;
+  }
+
+  .meeting {
+    border: 1px solid var(--border);
+    padding: clamp(1.25rem, 1rem + 1vw, 2rem);
+  }
+
+  legend {
+    padding-inline: 0.5rem;
+    color: var(--heading);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    letter-spacing: 0.02em;
+  }
+
+  .meeting-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+
+  .field {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .field label,
+  .section-progress span {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  input,
+  textarea,
+  select {
+    inline-size: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background-color: var(--bg);
+    color: var(--heading);
+    font: inherit;
+    line-height: 1.5;
+  }
+
+  input {
+    min-block-size: 2.75rem;
+  }
+
+  textarea {
+    min-block-size: 2.75rem;
+    resize: vertical;
+    field-sizing: content;
+  }
+
+  .layout {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .rail ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .rail a {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .rail a:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .rail .count {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rail a.done .count {
+    color: var(--green);
+  }
+
+  @media (width >= 64rem) {
+    .layout {
+      grid-template-columns: 16rem minmax(0, 1fr);
+    }
+
+    .rail {
+      position: sticky;
+      inset-block-start: calc(var(--header-height) + 1rem);
+    }
+
+    .rail ul {
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    .rail a {
+      display: flex;
+      justify-content: space-between;
+      border-color: transparent;
+      background: none;
+    }
+  }
+
+  .sections {
+    display: grid;
+    gap: 3rem;
+    min-inline-size: 0;
+  }
+
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    margin-block-end: 0.75rem;
+  }
+
+  .section-head h2 {
+    font-size: var(--text-h3);
+    margin-block-end: 0;
+  }
+
+  .section-progress {
+    display: grid;
+    gap: 0.25rem;
+    min-inline-size: 10rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lead {
+    max-inline-size: var(--prose-max);
+    margin-block-end: 1rem;
+    color: var(--text-muted);
+  }
+
+  .callout {
+    max-inline-size: var(--prose-max);
+    margin-block-end: 1.25rem;
+    padding: 0.875rem 1rem;
+    border-inline-start: 3px solid var(--amber);
+    background-color: var(--surface-2);
+    color: var(--heading);
+  }
+
+  .question {
+    display: grid;
+    gap: 0.625rem;
+    margin-block-end: 2px;
+    border-inline-start: 3px solid var(--border-strong);
+  }
+
+  .question[data-status='answered'] {
+    border-inline-start-color: var(--green);
+  }
+
+  .question[data-status='followup'] {
+    border-inline-start-color: var(--amber);
+  }
+
+  .question[data-status='na'] {
+    border-inline-start-color: var(--border);
+    opacity: 0.7;
+  }
+
+  .question-head {
+    display: grid;
+    gap: 0.75rem 1.5rem;
+    align-items: start;
+  }
+
+  @media (width >= 40rem) {
+    .question-head {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+
+  .question h3 {
+    font-family: var(--font-body);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+
+  .status {
+    inline-size: auto;
+    min-inline-size: 10rem;
+    min-block-size: 2.5rem;
+    padding-block: 0.25rem;
+  }
+
+  .why {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+</style>
