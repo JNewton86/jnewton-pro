@@ -1,4 +1,4 @@
-// Discovery-board notes for one client. The middleware has already checked the session and set
+// Discovery-board notes for the signed-in client. The middleware has already checked the session and set
 // locals.client, so this only validates the payload and talks to the store.
 import type { APIRoute } from 'astro';
 import {
@@ -13,7 +13,7 @@ import {
   type Answer,
   type AnswerStatus,
   type MeetingMeta,
-} from '../../../../lib/portal/store';
+} from '../../../lib/portal/store';
 
 export const prerender = false;
 
@@ -26,7 +26,8 @@ const json = (body: unknown, status = 200) =>
 export const GET: APIRoute = async ({ locals }) => {
   const client = locals.client;
   if (!client) return json({ error: 'not found' }, 404);
-  return json({ configured: storeConfigured(), ...(await readDiscovery(client.slug)) });
+  const state = await readDiscovery(client.slug);
+  return json({ configured: storeConfigured(), ...state }, state.available ? 200 : 503);
 };
 
 const isStatus = (value: unknown): value is AnswerStatus =>

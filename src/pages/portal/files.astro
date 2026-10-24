@@ -1,6 +1,6 @@
 ---
-import PortalLayout from '../../../components/portal/PortalLayout.astro';
-import { filesConfigured, listFiles } from '../../../lib/portal/files';
+import PortalLayout from '../../components/portal/PortalLayout.astro';
+import { filesConfigured, listFiles } from '../../lib/portal/files';
 
 export const prerender = false;
 
@@ -11,8 +11,7 @@ const configured = filesConfigured();
 const files = configured ? await listFiles(client.slug) : [];
 const images = files.filter((f) => f.kind === 'image');
 const documents = files.filter((f) => f.kind !== 'image');
-const fileUrl = (name: string) =>
-  `/api/clients/${client.slug}/file/?name=${encodeURIComponent(name)}`;
+const fileUrl = (name: string) => `/api/portal/file/?name=${encodeURIComponent(name)}`;
 
 const formatSize = (bytes: number) =>
   bytes >= 1_048_576

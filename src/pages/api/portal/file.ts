@@ -1,10 +1,10 @@
-// Streams one gated file from the client's private Blob folder: GET /api/clients/<slug>/file/?name=…
+// Streams one gated file from the client's private Blob folder: GET /api/portal/file/?name=…
 // The name is a query parameter rather than a path segment so the URL never looks like a static
 // asset (which some servers route differently). Session already checked by the middleware. Served
 // inline (images and PDFs open in the browser); the files page offers a download link via the
 // `download` attribute.
 import type { APIRoute } from 'astro';
-import { isSafeFileName, openFile } from '../../../../lib/portal/files';
+import { isSafeFileName, openFile } from '../../../lib/portal/files';
 
 export const prerender = false;
 

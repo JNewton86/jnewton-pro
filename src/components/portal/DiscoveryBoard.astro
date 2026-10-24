@@ -59,7 +59,11 @@ const meta = state.meta;
       </button>
     </div>
     <p class="save-state" id="save-state" role="status" aria-live="polite">
-      {canSave ? 'Changes save automatically.' : 'Saving is not available on this deployment.'}
+      {canSave
+        ? 'Changes save automatically.'
+        : state.available
+          ? 'Saving is not available on this deployment.'
+          : 'Saved notes could not be loaded right now, so editing is paused. Reload in a moment.'}
     </p>
   </div>
 
@@ -194,7 +198,7 @@ const meta = state.meta;
   function init(root: HTMLElement) {
     const slug = root.dataset['slug'] ?? '';
     const canSave = root.dataset['canSave'] === 'true';
-    const endpoint = `/api/clients/${slug}/discovery/`;
+    const endpoint = '/api/portal/discovery/';
     const saveState = root.querySelector<HTMLElement>('#save-state');
 
     const questions = [...root.querySelectorAll<HTMLElement>('[data-question]')];

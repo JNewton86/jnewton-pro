@@ -12,7 +12,7 @@ interface Props {
 }
 
 const { client, section, title, lede } = Astro.props;
-const base = `/clients/${client.slug}/`;
+const base = '/portal/';
 const tabs = [
   { id: 'overview', label: 'Overview', href: base },
   { id: 'discovery', label: 'Discovery board', href: `${base}discovery/` },
@@ -41,7 +41,7 @@ const tabs = [
             ))}
           </ul>
         </nav>
-        <form method="post" action={`${base}logout/`}>
+        <form method="post" action={`${base}sign-out/`}>
           <button class="btn btn-ghost sign-out" type="submit">
             Sign out
           </button>

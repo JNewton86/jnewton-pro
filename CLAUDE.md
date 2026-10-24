@@ -11,7 +11,7 @@ Copy changes should be checked against both — don't make the site read as job-
 ## Stack
 
 - Astro 7, static output, TypeScript (strictest). No client framework; ship JS only when there's no HTML/CSS way.
-- `@astrojs/vercel` adapter, used only by the routes that set `export const prerender = false` (the client portal under `/clients/` and `/api/`). Everything else stays prerendered; the sitemap lists only prerendered pages.
+- `@astrojs/vercel` adapter, used only by the routes that set `export const prerender = false` (the client portal under `/portal/` and `/api/portal/`). Everything else stays prerendered; the sitemap lists only prerendered pages.
 - Hosted on Vercel (Pro). PRs get preview deployments; `master` deploys to production.
 - Fonts are self-hosted from the Fontsource packages via Astro's `fonts` config (local provider): Bebas Neue (display), DM Sans (body), Space Mono (code only).
 - Tooling: Prettier, ESLint (astro + jsx-a11y via `eslint-plugin-jsx-a11y-x`, because the original plugin doesn't support ESLint 10), `astro check`, and `scripts/check-dist.mjs`. CI runs all of them (`npm run verify` locally).
@@ -25,7 +25,7 @@ Copy changes should be checked against both — don't make the site read as job-
 - `src/components/`, `src/layouts/BaseLayout.astro` (head/meta/fonts), `src/pages/`.
 - `src/styles/global.css` — design tokens and shared styles; component styles are scoped in each component.
 - `vercel.json` — security headers, redirects from old `.html` URLs, caching.
-- Client portal (passcode-gated project spaces for consulting clients): `src/data/clients/` (registry and per-client content such as discovery questions), `src/lib/portal/` (sessions, Redis store, Blob files), `src/middleware.ts` (the gate), `src/pages/clients/[slug]/` and `src/pages/api/clients/[slug]/`, `src/components/portal/`. Config is server-only via `astro:env` (see `.env.example`); passcodes are never in the repo. Client files are never committed or put in `public/` (the repo is public and the CDN serves `public/` before any check runs) — they live in a private Vercel Blob store and stream through the gated API route.
+- Client portal (passcode-gated project spaces for consulting clients): `src/data/clients/` (registry and per-client content such as discovery questions), `src/lib/portal/` (sessions, Redis store, Blob files), `src/middleware.ts` (the gate), `src/pages/portal/` and `src/pages/api/portal/`, `src/components/portal/`. Visitors sign in at `/portal/` with a client code and passcode; the client lives in the signed session cookie, never in the URL. Config is server-only via `astro:env` (see `.env.example`); passcodes are never in the repo. Client files are never committed or put in `public/` (the repo is public and the CDN serves `public/` before any check runs) — they live in a private Vercel Blob store and stream through the gated API route.
 
 ## Conventions
 

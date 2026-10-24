@@ -198,6 +198,8 @@ main:focus {
   padding: 0.625rem 1.25rem;
   border: 1px solid transparent;
   border-radius: var(--radius);
+  /* Also used on <button>, which would otherwise keep the browser's grey default face */
+  background-color: transparent;
   font-family: var(--font-body);
   font-size: 0.9375rem;
   font-weight: 600;

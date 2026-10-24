@@ -1,14 +1,16 @@
 ---
-import PortalLayout from '../../../components/portal/PortalLayout.astro';
-import { filesConfigured } from '../../../lib/portal/files';
-import { readDiscovery, storeConfigured } from '../../../lib/portal/store';
+// Project overview for the signed-in client (rendered by /portal/ once there is a session).
+import type { ClientPortal } from '../../data/clients';
+import { filesConfigured } from '../../lib/portal/files';
+import { readDiscovery, storeConfigured } from '../../lib/portal/store';
+import PortalLayout from './PortalLayout.astro';
 
-export const prerender = false;
+interface Props {
+  client: ClientPortal;
+}
 
-const client = Astro.locals.client;
-if (!client) return new Response(null, { status: 404 });
-
-const base = `/clients/${client.slug}/`;
+const { client } = Astro.props;
+const base = '/portal/';
 const state = storeConfigured() ? await readDiscovery(client.slug) : null;
 const total = client.discovery.reduce((n, s) => n + s.questions.length, 0);
 const answered = Object.values(state?.answers ?? {}).filter((a) => a.status === 'answered').length;
@@ -28,7 +30,7 @@ const followUps = Object.values(state?.answers ?? {}).filter((a) => a.status ===
 
     <section class="card" aria-labelledby="discovery-title">
       <h2 id="discovery-title">Discovery board</h2>
-      {state ? (
+      {state?.available ? (
         <p>
           {answered} of {total} questions answered
           {followUps > 0 && `, ${followUps} marked for follow-up`}.

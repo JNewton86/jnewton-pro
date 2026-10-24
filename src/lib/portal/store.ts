@@ -24,6 +24,8 @@ export interface MeetingMeta {
 export interface DiscoveryState {
   answers: Record<string, Answer>;
   meta: MeetingMeta | null;
+  /** False when the store is configured but could not be reached, so saved notes may exist unseen. */
+  available: boolean;
 }
 
 export const ANSWER_MAX_LENGTH = 5000;
@@ -76,9 +78,16 @@ function parseMeta(value: unknown): MeetingMeta | null {
 
 export async function readDiscovery(slug: string): Promise<DiscoveryState> {
   const db = redis();
-  const state: DiscoveryState = { answers: {}, meta: null };
+  const state: DiscoveryState = { answers: {}, meta: null, available: db !== null };
   if (!db) return state;
-  const fields = await db.hgetall<Record<string, unknown>>(discoveryKey(slug));
+  let fields: Record<string, unknown> | null;
+  try {
+    fields = await db.hgetall<Record<string, unknown>>(discoveryKey(slug));
+  } catch (error) {
+    console.error('portal store: could not read discovery notes', error);
+    state.available = false;
+    return state;
+  }
   for (const [field, value] of Object.entries(fields ?? {})) {
     if (field === META_FIELD) {
       state.meta = parseMeta(value);
@@ -109,14 +118,20 @@ export async function clearDiscovery(slug: string): Promise<void> {
 }
 
 /**
- * Sliding-window-ish rate limit: `limit` hits per `windowSeconds` for a key.
- * Returns true when the request is allowed. Allows everything when Redis is absent.
+ * Fixed-window rate limit: `limit` hits per `windowSeconds` for a key. Returns true when the
+ * request is allowed. Fails open (allows) when Redis is absent or unreachable, so a storage
+ * outage degrades the brute-force protection rather than locking every client out.
  */
 export async function rateLimit(key: string, limit: number, windowSeconds: number) {
   const db = redis();
   if (!db) return true;
-  const redisKey = `portal:ratelimit:${key}`;
-  const count = await db.incr(redisKey);
-  if (count === 1) await db.expire(redisKey, windowSeconds);
-  return count <= limit;
+  try {
+    const redisKey = `portal:ratelimit:${key}`;
+    const count = await db.incr(redisKey);
+    if (count === 1) await db.expire(redisKey, windowSeconds);
+    return count <= limit;
+  } catch (error) {
+    console.error('portal store: rate limit unavailable', error);
+    return true;
+  }
 }

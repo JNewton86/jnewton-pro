@@ -1,14 +1,17 @@
-// Passcode sessions for the client portal.
+// Sign-in sessions for the client portal.
 //
-// A client enters a shared passcode once; the portal then sets an HttpOnly cookie holding an
-// expiry and an HMAC signature over `<slug>.<expiry>`, so the cookie can't be forged or moved
-// to another client's space. Passcodes live in PORTAL_PASSCODES (a JSON object of slug to
-// passcode); the signing key is PORTAL_SESSION_SECRET. Both are server-only (astro:env).
+// A visitor signs in at /portal/ with a client code and that client's passcode. The portal then
+// sets one HttpOnly cookie holding the client code, an expiry and an HMAC signature over both, so
+// the cookie can't be forged or edited to point at another client. The URL never names the
+// client; every portal page reads it from the session. Passcodes live in PORTAL_PASSCODES (a JSON
+// object of client code to passcode); the signing key is PORTAL_SESSION_SECRET. Both are
+// server-only (astro:env).
 import { PORTAL_PASSCODES, PORTAL_SESSION_SECRET } from 'astro:env/server';
 import type { AstroCookies } from 'astro';
+import { getClient, type ClientPortal } from '../../data/clients';
 
 const SESSION_DAYS = 30;
-const COOKIE_PREFIX = 'portal_';
+const COOKIE = 'portal_session';
 
 const encoder = new TextEncoder();
 
@@ -16,12 +19,12 @@ const encoder = new TextEncoder();
 export const authConfigured = (): boolean =>
   Boolean(PORTAL_SESSION_SECRET && PORTAL_SESSION_SECRET.length >= 32 && PORTAL_PASSCODES);
 
-function passcodeFor(slug: string): string | undefined {
+function passcodeFor(code: string): string | undefined {
   if (!PORTAL_PASSCODES) return undefined;
   try {
     const parsed: unknown = JSON.parse(PORTAL_PASSCODES);
     if (typeof parsed !== 'object' || parsed === null) return undefined;
-    const value = (parsed as Record<string, unknown>)[slug];
+    const value = (parsed as Record<string, unknown>)[code];
     return typeof value === 'string' && value.length > 0 ? value : undefined;
   } catch {
     return undefined;
@@ -58,18 +61,27 @@ async function safeEqual(a: string, b: string): Promise<boolean> {
   return diff === 0;
 }
 
-export async function verifyPasscode(slug: string, attempt: string): Promise<boolean> {
-  const expected = passcodeFor(slug);
-  if (!expected) return false;
-  return safeEqual(expected, attempt.trim());
+/** Client codes are the registry slugs: short, lowercase, URL-safe. */
+export const normalizeCode = (value: string): string => value.trim().toLowerCase();
+
+/**
+ * Checks a client code and passcode together. An unknown code is compared against a dummy value
+ * so the response time doesn't reveal which codes exist.
+ */
+export async function verifyCredentials(
+  code: string,
+  attempt: string,
+): Promise<ClientPortal | null> {
+  const client = getClient(code);
+  const expected = (client && passcodeFor(code)) || `no-such-client:${crypto.randomUUID()}`;
+  const matches = await safeEqual(expected, attempt.trim());
+  return matches && client ? client : null;
 }
 
-const cookieName = (slug: string) => `${COOKIE_PREFIX}${slug}`;
-
-export async function createSession(cookies: AstroCookies, slug: string): Promise<void> {
+export async function createSession(cookies: AstroCookies, code: string): Promise<void> {
   const expires = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
-  const signature = await sign(`${slug}.${expires}`);
-  cookies.set(cookieName(slug), `${expires}.${signature}`, {
+  const signature = await sign(`${code}.${expires}`);
+  cookies.set(COOKIE, `${code}.${expires}.${signature}`, {
     httpOnly: true,
     secure: import.meta.env.PROD,
     sameSite: 'lax',
@@ -78,18 +90,19 @@ export async function createSession(cookies: AstroCookies, slug: string): Promis
   });
 }
 
-export async function hasSession(cookies: AstroCookies, slug: string): Promise<boolean> {
-  if (!authConfigured()) return false;
-  const raw = cookies.get(cookieName(slug))?.value;
-  if (!raw) return false;
-  const dot = raw.indexOf('.');
-  if (dot < 1) return false;
-  const expires = Number(raw.slice(0, dot));
-  const signature = raw.slice(dot + 1);
-  if (!Number.isFinite(expires) || expires < Date.now()) return false;
-  return safeEqual(await sign(`${slug}.${expires}`), signature);
+/** The signed-in client, or null when there is no valid session. */
+export async function readSession(cookies: AstroCookies): Promise<ClientPortal | null> {
+  if (!authConfigured()) return null;
+  const raw = cookies.get(COOKIE)?.value;
+  if (!raw) return null;
+  const [code, expiresText, signature, ...rest] = raw.split('.');
+  if (!code || !expiresText || !signature || rest.length > 0) return null;
+  const expires = Number(expiresText);
+  if (!Number.isFinite(expires) || expires < Date.now()) return null;
+  if (!(await safeEqual(await sign(`${code}.${expires}`), signature))) return null;
+  return getClient(code) ?? null;
 }
 
-export function clearSession(cookies: AstroCookies, slug: string): void {
-  cookies.delete(cookieName(slug), { path: '/' });
+export function clearSession(cookies: AstroCookies): void {
+  cookies.delete(COOKIE, { path: '/' });
 }

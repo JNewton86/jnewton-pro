@@ -1,6 +1,6 @@
 // Gated files for the client portal (design exports, documents the client has agreed to share).
 // Files live in a private Vercel Blob store under `clients/<slug>/<name>` and are streamed through
-// /api/clients/<slug>/files/<name> after the passcode check. Nothing is committed to the repo
+// /api/portal/file/?name=<name> after the sign-in check. Nothing is committed to the repo
 // (it's public) and nothing sits in /public (the CDN serves that before any check runs).
 import { BLOB_READ_WRITE_TOKEN } from 'astro:env/server';
 import { get, list } from '@vercel/blob';
