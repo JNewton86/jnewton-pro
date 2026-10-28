@@ -160,6 +160,12 @@ export const discovery: DiscoverySection[] = [
         why: 'Surcharging has state rules and disclosure requirements; ACH is cheaper for larger premiums.',
       },
       {
+        id: 'm11',
+        question:
+          'If ACH is wanted, how should it fit instant issue: hold the bond until the ACH settles (days), issue on your credit risk, or reserve ACH for agent-handled bonds?',
+        why: 'Cards clear instantly; ACH does not. The answer decides whether ACH belongs in the online flow at all.',
+      },
+      {
         id: 'm4',
         question:
           'Do you add agency fees, filing fees or other charges on top of the carrier premium?',
@@ -250,6 +256,12 @@ export const discovery: DiscoverySection[] = [
         why: "Design the carrier-adapter layer now. Also: keep issueBond flag 'F' so nothing auto-binds while multi-quoting.",
       },
       {
+        id: 'a11',
+        question:
+          "Confirm our position: the newBondRequest issueBond flag stays 'F' always, and we call issueBond separately after payment clears.",
+        why: "'T' binds before any payment and auto-executes when only one term is offered. There is no case where the site should use it.",
+      },
+      {
         id: 'a9',
         question:
           'Are there disclosure rules when showing multiple carrier prices, or compensation differences that affect ordering?',
@@ -324,14 +336,32 @@ export const discovery: DiscoverySection[] = [
   },
   {
     id: 'crm',
-    title: 'CRM, abandonment & follow-up',
-    lead: 'The client wants abandoned quotes captured for drip campaigns and manual outreach. Define the tool, the trigger, and the consent.',
+    title: 'Erlon, CRM & follow-up',
+    lead: 'Erlon is the bond CRM today. Decide what it must receive from the site, and where abandoned quotes and follow-up campaigns live.',
     questions: [
       {
         id: 'r1',
         question:
-          'Which CRM do you use today, if any (HubSpot, Salesforce, Zoho, AMS built-in, spreadsheet)? Who owns it?',
-        why: 'HubSpot free tier plus its forms API is a common fit for a 5-person shop.',
+          'Are you expecting Erlon to be integrated? Does Erlon have an API, a file import, or a vendor contact who can tell us?',
+        why: 'If Erlon has an API it becomes the system of record and the site writes to it; if not, a scheduled export is the fallback.',
+      },
+      {
+        id: 'r9',
+        question:
+          'What lives in Erlon today: customers, bonds, expiration dates, documents, notes? Is it the system of record for renewals?',
+        why: 'Decides which fields the site must send and whether renewal reminders come from Erlon or from us.',
+      },
+      {
+        id: 'r10',
+        question:
+          'Should bonds issued online be written to Erlon automatically, or is a daily export acceptable to start?',
+        why: 'Live sync is Phase 2 scope; an export can ship with Phase 1.',
+      },
+      {
+        id: 'r11',
+        question:
+          'Where should abandoned quotes land: Erlon, a marketing tool such as HubSpot, or an email to the team?',
+        why: 'Erlon may not do drip campaigns; a second tool may be needed for the marketing half.',
       },
       {
         id: 'r2',
