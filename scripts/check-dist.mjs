@@ -6,8 +6,9 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { STATIC_DIR } from './serve-static.mjs';
 
-const DIST = 'dist';
+const DIST = STATIC_DIR;
 const problems = [];
 
 const htmlFiles = (function walk(dir) {

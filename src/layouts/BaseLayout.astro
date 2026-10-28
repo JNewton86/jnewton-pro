@@ -18,6 +18,8 @@ interface Props {
   ogImageAlt?: string;
   /** schema.org JSON-LD for this page (see src/lib/structured-data.ts). */
   structuredData?: Record<string, unknown>;
+  /** Keep the page out of search engines (private pages such as the client portal). */
+  noindex?: boolean;
 }
 
 const {
@@ -27,6 +29,7 @@ const {
   ogImage = '/og/home.png',
   ogImageAlt = `${site.name}, ${site.jobTitle}`,
   structuredData,
+  noindex = false,
 } = Astro.props;
 const fullTitle = title ? `${title} — ${site.name}` : site.title;
 const canonical = new URL(Astro.url.pathname, Astro.site);
@@ -42,6 +45,7 @@ const ogImageUrl = new URL(ogImage, Astro.site);
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="author" content={site.name} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
